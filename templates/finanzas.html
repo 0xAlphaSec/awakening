@@ -121,7 +121,6 @@
     <button class="tab active" onclick="showTab('resumen')">Resumen</button>
     <button class="tab" onclick="showTab('sueldo')">Sueldo</button>
     <button class="tab" onclick="showTab('gastos')">Gastos</button>
-    <button class="tab" onclick="showTab('transacciones')">Transacciones</button>
   </div>
 
   <!-- RESUMEN -->
@@ -184,48 +183,20 @@
   </div>
 
   <!-- TRANSACCIONES -->
-  <div id="tab-transacciones" class="hidden">
-    <div class="form-panel">
-      <div class="form-grid">
-        <div class="form-group">
-          <label class="form-label">Concepto</label>
-          <input class="form-input" id="inp-tx-concepto" type="text" placeholder="Compra supermercado">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Monto (€)</label>
-          <input class="form-input" id="inp-tx-monto" type="number" placeholder="45">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Categoría</label>
-          <input class="form-input" id="inp-tx-cat" type="text" placeholder="Alimentación">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Tipo</label>
-          <select class="form-select" id="sel-tx-tipo">
-            <option value="gasto">Gasto</option>
-            <option value="ingreso">Ingreso</option>
-          </select>
-        </div>
-      </div>
-      <button class="btn-primary" style="width:100%" onclick="addTransaccion()">Registrar transacción</button>
-    </div>
-    <div class="section-title">Últimas transacciones</div>
-    <div id="tx-list"></div>
-  </div>
+  
 </div>
 
 <script>
   function showTab(tab) {
-    ["resumen","sueldo","gastos","transacciones"].forEach(t => {
+    ["resumen","sueldo","gastos"].forEach(t => {
       document.getElementById(`tab-${t}`).classList.add("hidden");
     });
     document.getElementById(`tab-${tab}`).classList.remove("hidden");
     document.querySelectorAll(".tab").forEach((el, i) => {
-      el.classList.toggle("active", ["resumen","sueldo","gastos","transacciones"][i] === tab);
+      el.classList.toggle("active", ["resumen","sueldo","gastos"][i] === tab);
     });
     if (tab === "resumen") cargarResumen();
     if (tab === "gastos") cargarGastos();
-    if (tab === "transacciones") cargarTransacciones();
     if (tab === "sueldo") cargarTabSueldo();
   }
 
@@ -575,35 +546,7 @@ async function cargarHistorialSueldos() {
     cargarGastos();
   }
 
-  async function cargarTransacciones() {
-    const res = await fetch("/api/finanzas/transacciones");
-    const txs = await res.json();
-    document.getElementById("tx-list").innerHTML = txs.map(t => `
-      <div class="tx-item">
-        <div>
-          <div class="tx-concepto">${t.concepto || t.categoria}</div>
-          <div class="tx-cat">${t.categoria} · ${t.fecha}</div>
-        </div>
-        <div class="tx-amount ${t.tipo}">${t.tipo === "ingreso" ? "+" : "-"}${t.monto} €</div>
-      </div>`).join("") || '<div style="color:var(--text-dim);font-size:14px">Sin transacciones</div>';
-  }
 
-  async function addTransaccion() {
-    const concepto = document.getElementById("inp-tx-concepto").value.trim();
-    const monto = parseFloat(document.getElementById("inp-tx-monto").value);
-    const categoria = document.getElementById("inp-tx-cat").value.trim();
-    const tipo = document.getElementById("sel-tx-tipo").value;
-    if (!monto || !categoria) return;
-    await fetch("/api/finanzas/transacciones", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ concepto, monto, categoria, tipo })
-    });
-    document.getElementById("inp-tx-concepto").value = "";
-    document.getElementById("inp-tx-monto").value = "";
-    document.getElementById("inp-tx-cat").value = "";
-    cargarTransacciones();
-  }
 
   cargarResumen();
 </script>
