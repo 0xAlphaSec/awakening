@@ -420,6 +420,86 @@
         align-items: flex-start;
       }
     }
+
+    /* ONBOARDING */
+   .onboarding {
+     display: none;
+     position: fixed;
+     inset: 0;
+     background: var(--bg);
+     z-index: 200;
+     align-items: center;
+     justify-content: center;
+   }
+
+   .onboarding.open {
+     display: flex;
+   }
+
+   .onboarding-panel {
+     text-align: center;
+     padding: 40px 24px;
+     max-width: 420px;
+     width: 100%;
+     animation: fadeUp 0.8s ease both;
+   }
+
+   .onboarding-title {
+     font-family: 'Cinzel', serif;
+     font-size: 48px;
+     font-weight: 900;
+     background: linear-gradient(135deg, var(--text) 0%, var(--accent) 100%);
+     -webkit-background-clip: text;
+     -webkit-text-fill-color: transparent;
+     background-clip: text;
+     margin-bottom: 8px;
+   }
+
+   .onboarding-sub {
+     font-size: 14px;
+     color: var(--text-dim);
+     letter-spacing: 3px;
+     text-transform: uppercase;
+     margin-bottom: 48px;
+   }
+
+   .onboarding-input {
+     width: 100%;
+     background: var(--panel);
+     border: 1px solid var(--border);
+     border-radius: 4px;
+     color: var(--text);
+     font-family: 'Cinzel', serif;
+     font-size: 22px;
+     font-weight: 700;
+     padding: 16px 20px;
+     text-align: center;
+     margin-bottom: 16px;
+     transition: border-color 0.2s;
+   }
+
+   .onboarding-input:focus {
+     outline: none;
+     border-color: var(--accent);
+   }
+
+   .onboarding-btn {
+     width: 100%;
+     background: var(--accent);
+     border: none;
+     border-radius: 4px;
+     color: white;
+     font-family: 'Rajdhani', sans-serif;
+     font-size: 14px;
+     font-weight: 600;
+     letter-spacing: 4px;
+     text-transform: uppercase;
+     padding: 14px;
+     cursor: pointer;
+     transition: opacity 0.2s;
+   }
+
+   .onboarding-btn:hover { opacity: 0.85; }
   </style>
 </head>
 <body>
@@ -544,9 +624,31 @@
         container.innerHTML = '<div class="no-castigos">Sin castigos pendientes.</div>';
       }
     }
+    
+    async function init() {
+      const res = await fetch("/api/usuario/");
+      if (res.status === 404) {
+        document.getElementById("onboarding").classList.add("open");
+      } else {
+        cargarStatus();
+        cargarCastigos();
+      }
+    }
 
-    cargarStatus();
-    cargarCastigos();
+    async function crearUsuario() {
+      const nombre = document.getElementById("onboarding-nombre").value.trim();
+      if (!nombre) return;
+      await fetch("/api/usuario/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre })
+      });
+      document.getElementById("onboarding").classList.remove("open");
+      cargarStatus();
+      cargarCastigos();
+    }
+
+    init();
   </script>
   <script>
     if ("serviceWorker" in navigator) {
@@ -554,4 +656,12 @@
     }
   </script>
 </body>
+<div class="onboarding" id="onboarding">
+  <div class="onboarding-panel">
+    <div class="onboarding-title">Awakening</div>
+    <div class="onboarding-sub">El sistema te ha elegido</div>
+    <input class="onboarding-input" id="onboarding-nombre" type="text" placeholder="Tu nombre, cazador">
+    <button class="onboarding-btn" onclick="crearUsuario()">Despertar</button>
+  </div>
+</div>
 </html>
