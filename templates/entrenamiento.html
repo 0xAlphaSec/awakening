@@ -554,7 +554,7 @@
       return;
     }
 
-    const opts = ejerciciosCat.map(e => `<option value="${e.id}" data-tipo="${e.tipo || 'repeticiones'}">${e.nombre}</option>`).join("");
+    const opts = ejerciciosCat.map(e => `<option value="${e.id}" data-tipo="${e.tipo || 'peso'}">${e.nombre}</option>`).join("");
     container.innerHTML = `
       <div class="sesion-panel">
         <div class="sesion-header">
@@ -613,12 +613,13 @@
     const sel = document.getElementById("sel-ejercicio");
     if (!sel) return;
     const opt = sel.options[sel.selectedIndex];
-    const tipo = opt ? opt.dataset.tipo : 'repeticiones';
+    const tipo = opt ? opt.dataset.tipo : 'peso';
     const esTiempo = tipo === 'tiempo';
     document.getElementById("campo-reps").classList.toggle("hidden", esTiempo);
     document.getElementById("campo-tiempo").classList.toggle("hidden", !esTiempo);
-    document.getElementById("campo-peso").classList.toggle("hidden", tipo === 'peso_corporal' || tipo === 'tiempo');
-  }
+    // El peso lo controla togglePesoSesion, no el tipo
+    document.getElementById("campo-peso").classList.toggle("hidden", esTiempo);
+}
 
   async function cargarSets() {
     const res = await fetch(`/api/ejercicios/sesiones/${sesionActiva}/sets`);
@@ -651,7 +652,7 @@
     const sel = document.getElementById("sel-ejercicio");
     const ejercicio_id = parseInt(sel.value);
     const opt = sel.options[sel.selectedIndex];
-    const tipo = opt ? opt.dataset.tipo : 'repeticiones';
+    const tipo = opt ? opt.dataset.tipo : 'peso';
     const serie_num = parseInt(document.getElementById("inp-serie").value);
     const esTiempo = tipo === 'tiempo';
     const reps = esTiempo ? null : parseInt(document.getElementById("inp-reps").value);
