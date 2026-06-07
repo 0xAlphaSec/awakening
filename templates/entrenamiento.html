@@ -125,8 +125,22 @@
       .rutina-card-header { flex-direction: column; align-items: flex-start; gap: 10px; }
     }
 
-    .dias-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 6px; }
-    .dia-btn { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; color: var(--text-dim); font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 600; padding: 6px 4px; cursor: pointer; text-align: center; transition: all 0.2s; }
+    .dia-btn { 
+      width: 36px; 
+      height: 36px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      background: var(--bg2); 
+      border: 1px solid var(--border); 
+      border-radius: 4px; 
+      color: var(--text-dim); 
+      font-family: 'Rajdhani', sans-serif; 
+      font-size: 12px; 
+      font-weight: 600; 
+      cursor: pointer; 
+      transition: all 0.2s; 
+    }
     .dia-btn.selected { background: var(--accent); border-color: var(--accent); color: white; }
   </style>
 </head>
@@ -185,9 +199,9 @@
     </div>
     <div class="form-group">
       <label class="form-label">Días de la semana</label>
-      <div class="dias-grid">
+      <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
         <div class="dia-btn" data-dia="Lunes">L</div>
-        div class="dia-btn" data-dia="Martes">M</div>
+        <div class="dia-btn" data-dia="Martes">M</div>
         <div class="dia-btn" data-dia="Miercoles">X</div>
         <div class="dia-btn" data-dia="Jueves">J</div>
         <div class="dia-btn" data-dia="Viernes">V</div>
