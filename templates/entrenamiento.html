@@ -406,7 +406,7 @@
       const nuevo = sel.value === "__nuevo";
       document.getElementById("nuevo-ejercicio-fields").classList.toggle("hidden", !nuevo);
     };
-    document.getElementById("nuevo-ejercicio-fields").classList.add("hidden");
+    document.getElementById("nuevo-ejercicio-fields").classList.remove("hidden");
     tipoEjercicioSeleccionado = 'repeticiones';
     document.querySelectorAll(".tipo-btn").forEach(b => b.classList.toggle("selected", b.dataset.tipo === 'repeticiones'));
     document.getElementById("field-reps").classList.remove("hidden");
