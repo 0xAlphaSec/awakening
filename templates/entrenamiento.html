@@ -447,9 +447,9 @@
           tipo: tipoEjercicioSeleccionado
         })
       });
+      const data = await res.json();
+      ejercicio_id = data.id;
       await cargarEjercicios();
-      ejercicio_id = ejerciciosCat[ejerciciosCat.length - 1]?.id;
-      if (!ejercicio_id) { cerrarModal("modal-ejercicio-rutina"); return; }
     } else {
       ejercicio_id = parseInt(sel.value);
     }

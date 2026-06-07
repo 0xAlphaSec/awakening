@@ -79,18 +79,18 @@ def iniciar_sesion():
         "sesion_id": sesion_id
     }), 201
 
-@ejercicios_bp.route("/sesiones/<int:sesion_id>/sets", methods=["POST"])
-def add_set(sesion_id):
+@ejercicios_bp.route("/catalogo", methods=["POST"])
+def add_ejercicio():
     data = request.get_json()
-    Sesion.agregar_set(
-        sesion_id,
-        data["ejercicio_id"],
-        data["serie_num"],
-        data["reps"],
-        data.get("peso_kg"),
-        data.get("equipo")
+    conn = get_connection()
+    cursor = conn.execute(
+        "INSERT INTO ejercicios_cat (nombre, grupo_muscular, equipo_default) VALUES (?, ?, ?)",
+        (data["nombre"], data.get("grupo_muscular"), data.get("equipo_default"))
     )
-    return jsonify({"mensaje": "Set registrado."}), 201
+    ejercicio_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return jsonify({"mensaje": "Ejercicio añadido.", "id": ejercicio_id}), 201
 
 @ejercicios_bp.route("/sesiones/<int:sesion_id>/sets", methods=["GET"])
 def get_sets(sesion_id):
