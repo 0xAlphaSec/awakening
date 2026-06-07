@@ -580,14 +580,14 @@
             <label class="form-label">Segundos</label>
             <input class="form-input" id="inp-tiempo" type="number" min="1" value="30">
           </div>
-          <div id="campo-peso">
+          <div id="campo-peso" class="hidden">
             <label class="form-label">Peso (kg)</label>
             <input class="form-input" id="inp-peso" type="number" min="0" placeholder="—">
           </div>
         </div>
         <div class="form-group">
           <label class="form-label">Equipo</label>
-          <select class="form-select" id="sel-equipo">
+          <select class="form-select" id="sel-equipo" onchange="togglePesoSesion(this)">
             <option value="Peso corporal">Peso corporal</option>
             <option value="Mancuernas">Mancuernas</option>
             <option value="Barra">Barra</option>
@@ -604,6 +604,11 @@
 
     actualizarCamposSesion();
     cargarSets();
+  }
+
+  function togglePesoSesion(sel) {
+    const sinPeso = sel.value === "Peso corporal" || sel.value === "";
+    document.getElementById("campo-peso").classList.toggle("hidden", sinPeso);
   }
 
   function actualizarCamposSesion() {
