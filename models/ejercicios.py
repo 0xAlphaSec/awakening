@@ -39,12 +39,13 @@ class Ejercicio:
 class Rutina:
 
     @staticmethod
-    def agregar(nombre, dia_semana, descripcion=None):
+    def agregar(nombre, dias_semana, descripcion=None):
         conn = get_connection()
         cur = get_cursor(conn)
+        import json
         cur.execute(
-            "INSERT INTO rutinas (nombre, dia_semana, descripcion) VALUES (%s, %s, %s)",
-            (nombre, dia_semana, descripcion)
+            "INSERT INTO rutinas (nombre, dia_semana, dias_semana, descripcion) VALUES (%s, %s, %s, %s)",
+            (nombre, dias_semana[0], json.dumps(dias_semana), descripcion)
         )
         conn.commit()
         cur.close()
@@ -64,7 +65,10 @@ class Rutina:
     def obtener_por_dia(dia):
         conn = get_connection()
         cur = get_cursor(conn)
-        cur.execute("SELECT * FROM rutinas WHERE dia_semana = %s", (dia,))
+        cur.execute(
+            "SELECT * FROM rutinas WHERE dias_semana LIKE %s OR dia_semana = %s",
+            (f'%{dia}%', dia)
+        )
         rutina = cur.fetchone()
         cur.close()
         conn.close()

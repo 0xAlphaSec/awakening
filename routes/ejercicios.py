@@ -23,7 +23,7 @@ def add_rutina():
     data = request.get_json()
     Rutina.agregar(
         data["nombre"],
-        data["dia_semana"],
+        data["dias_semana"],
         data.get("descripcion")
     )
     return jsonify({"mensaje": "Rutina añadida."}), 201

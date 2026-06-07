@@ -124,6 +124,10 @@
       .tipo-grid { grid-template-columns: 1fr; }
       .rutina-card-header { flex-direction: column; align-items: flex-start; gap: 10px; }
     }
+
+    .dias-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 6px; }
+    .dia-btn { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; color: var(--text-dim); font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 600; padding: 6px 4px; cursor: pointer; text-align: center; transition: all 0.2s; }
+    .dia-btn.selected { background: var(--accent); border-color: var(--accent); color: white; }
   </style>
 </head>
 <body>
@@ -180,16 +184,16 @@
       <input class="form-input" id="inp-rutina-nombre" type="text" placeholder="Ej: Push Day">
     </div>
     <div class="form-group">
-      <label class="form-label">Día de la semana</label>
-      <select class="form-select" id="inp-rutina-dia">
-        <option value="Lunes">Lunes</option>
-        <option value="Martes">Martes</option>
-        <option value="Miercoles">Miércoles</option>
-        <option value="Jueves">Jueves</option>
-        <option value="Viernes">Viernes</option>
-        <option value="Sabado">Sábado</option>
-        <option value="Domingo">Domingo</option>
-      </select>
+      <label class="form-label">Días de la semana</label>
+      <div class="dias-grid">
+        <div class="dia-btn" data-dia="Lunes">L</div>
+        div class="dia-btn" data-dia="Martes">M</div>
+        <div class="dia-btn" data-dia="Miercoles">X</div>
+        <div class="dia-btn" data-dia="Jueves">J</div>
+        <div class="dia-btn" data-dia="Viernes">V</div>
+        <div class="dia-btn" data-dia="Sabado">S</div>
+        <div class="dia-btn" data-dia="Domingo">D</div>
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">Descripción (opcional)</label>
@@ -368,22 +372,27 @@
   function abrirModalRutina() {
     document.getElementById("inp-rutina-nombre").value = "";
     document.getElementById("inp-rutina-desc").value = "";
+    document.querySelectorAll("#modal-rutina .dia-btn").forEach(b => {
+        b.classList.remove("selected");
+        b.onclick = () => b.classList.toggle("selected");
+    });
     document.getElementById("modal-rutina").classList.add("open");
-  }
+}
 
   async function guardarRutina() {
     const nombre = document.getElementById("inp-rutina-nombre").value.trim();
-    const dia = document.getElementById("inp-rutina-dia").value;
     const desc = document.getElementById("inp-rutina-desc").value.trim();
-    if (!nombre) return;
+    const diasSeleccionados = [...document.querySelectorAll("#modal-rutina .dia-btn.selected")]
+        .map(b => b.dataset.dia);
+    if (!nombre || diasSeleccionados.length === 0) return;
     await fetch("/api/ejercicios/rutinas", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nombre, dia_semana: dia, descripcion: desc || null })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre, dias_semana: diasSeleccionados, descripcion: desc || null })
     });
     cerrarModal("modal-rutina");
     cargarRutinas();
-  }
+}
 
   async function eliminarRutina(id) {
     if (!confirm("¿Eliminar esta rutina?")) return;
