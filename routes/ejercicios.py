@@ -11,16 +11,6 @@ def get_ejercicios():
     ejercicios = Ejercicio.obtener_todos()
     return jsonify([dict(e) for e in ejercicios])
 
-@ejercicios_bp.route("/catalogo", methods=["POST"])
-def add_ejercicio():
-    data = request.get_json()
-    Ejercicio.agregar(
-        data["nombre"],
-        data.get("grupo_muscular"),
-        data.get("equipo_default")
-    )
-    return jsonify({"mensaje": "Ejercicio añadido."}), 201
-
 # ── RUTINAS ──────────────────────────────────────────────
 
 @ejercicios_bp.route("/rutinas", methods=["GET"])
