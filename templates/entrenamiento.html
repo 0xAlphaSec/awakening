@@ -339,7 +339,7 @@
         <div class="rutina-card-header">
           <div>
             <div class="rutina-card-nombre">${r.nombre}</div>
-            <div class="rutina-card-dia">${r.dia_semana}${r.descripcion ? ' · ' + r.descripcion : ''}</div>
+            <div class="rutina-card-dia">${r.dias_semana ? JSON.parse(r.dias_semana).join(" · ") : r.dia_semana}${r.descripcion ? ' · ' + r.descripcion : ''}</div>
           </div>
           <div class="rutina-card-actions">
             <button class="btn-secondary" style="padding:6px 14px;font-size:11px" onclick="abrirModalEjercicioRutina(${r.id})">+ Ejercicio</button>
