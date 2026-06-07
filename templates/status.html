@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Awakening — Status</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #080810;
+      --bg2:       #0d0d1a;
+      --panel:     #11111f;
+      --border:    #1e1e3a;
+      --accent:    #4f6ef7;
+      --accent2:   #7c3aed;
+      --gold:      #c9a84c;
+      --text:      #e8e8f0;
+      --text-dim:  #6b6b8a;
+      --fuerza:    #ef4444;
+      --resistencia: #f97316;
+      --conocimiento: #3b82f6;
+      --riqueza:   #c9a84c;
+      --vitalidad: #22c55e;
+      --disciplina: #a855f7;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Rajdhani', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Fondo con textura */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(79,110,247,0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(124,58,237,0.08) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    /* HEADER */
+    .header {
+      text-align: center;
+      margin-bottom: 48px;
+      animation: fadeDown 0.8s ease both;
+    }
+
+    .app-title {
+      font-family: 'Cinzel', serif;
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 8px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .player-name {
+      font-family: 'Cinzel', serif;
+      font-size: 48px;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--text) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      margin-bottom: 16px;
+    }
+
+    .level-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 10px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .level-badge::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(79,110,247,0.05), transparent);
+    }
+
+    .level-num {
+      font-family: 'Cinzel', serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .level-sep {
+      width: 1px;
+      height: 30px;
+      background: var(--border);
+    }
+
+    .level-name {
+      font-family: 'Cinzel', serif;
+      font-size: 14px;
+      letter-spacing: 3px;
+      color: var(--gold);
+      text-transform: uppercase;
+    }
+
+    .xp-total {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-top: 12px;
+      letter-spacing: 2px;
+    }
+
+    /* STATS GRID */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 16px;
+    }
+
+    .stat-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      animation: fadeUp 0.6s ease both;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px;
+      height: 100%;
+    }
+
+    .stat-card.Fuerza::before       { background: var(--fuerza); }
+    .stat-card.Resistencia::before  { background: var(--resistencia); }
+    .stat-card.Conocimiento::before { background: var(--conocimiento); }
+    .stat-card.Riqueza::before      { background: var(--riqueza); }
+    .stat-card.Vitalidad::before    { background: var(--vitalidad); }
+    .stat-card.Disciplina::before   { background: var(--disciplina); }
+
+    .stat-card:hover.Fuerza       { border-color: var(--fuerza); }
+    .stat-card:hover.Resistencia  { border-color: var(--resistencia); }
+    .stat-card:hover.Conocimiento { border-color: var(--conocimiento); }
+    .stat-card:hover.Riqueza      { border-color: var(--riqueza); }
+    .stat-card:hover.Vitalidad    { border-color: var(--vitalidad); }
+    .stat-card:hover.Disciplina   { border-color: var(--disciplina); }
+
+    .stat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .stat-icon-name {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .stat-icon {
+      font-size: 22px;
+    }
+
+    .stat-name {
+      font-family: 'Cinzel', serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .stat-level {
+      text-align: right;
+    }
+
+    .stat-level-num {
+      font-family: 'Cinzel', serif;
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .stat-level-name {
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .stat-level-num.Fuerza       { color: var(--fuerza); }
+    .stat-level-num.Resistencia  { color: var(--resistencia); }
+    .stat-level-num.Conocimiento { color: var(--conocimiento); }
+    .stat-level-num.Riqueza      { color: var(--riqueza); }
+    .stat-level-num.Vitalidad    { color: var(--vitalidad); }
+    .stat-level-num.Disciplina   { color: var(--disciplina); }
+
+    /* BARRA XP */
+    .xp-bar-container {
+      margin-top: 8px;
+    }
+
+    .xp-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+      letter-spacing: 1px;
+    }
+
+    .xp-bar-bg {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .xp-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      width: 0%;
+      transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .xp-bar-fill.Fuerza       { background: var(--fuerza); }
+    .xp-bar-fill.Resistencia  { background: var(--resistencia); }
+    .xp-bar-fill.Conocimiento { background: var(--conocimiento); }
+    .xp-bar-fill.Riqueza      { background: var(--riqueza); }
+    .xp-bar-fill.Vitalidad    { background: var(--vitalidad); }
+    .xp-bar-fill.Disciplina   { background: var(--disciplina); }
+
+    /* NAV */
+    .nav {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 48px;
+      animation: fadeDown 0.6s ease both;
+    }
+
+    .nav a {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      text-decoration: none;
+      padding: 8px 20px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    .nav a:hover, .nav a.active {
+      color: var(--text);
+      border-color: var(--border);
+      background: var(--panel);
+    }
+
+    /* CASTIGOS PENDIENTES */
+    .castigos-section {
+      margin-top: 32px;
+      animation: fadeUp 0.8s ease 0.4s both;
+    }
+
+    .section-title {
+      font-family: 'Cinzel', serif;
+      font-size: 12px;
+      letter-spacing: 4px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .castigo-card {
+      background: rgba(239,68,68,0.05);
+      border: 1px solid rgba(239,68,68,0.2);
+      border-radius: 6px;
+      padding: 16px 20px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .castigo-info {
+      flex: 1;
+    }
+
+    .castigo-habito {
+      font-size: 12px;
+      color: #ef4444;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .castigo-desc {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .btn-completar {
+      background: transparent;
+      border: 1px solid rgba(239,68,68,0.4);
+      color: #ef4444;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-completar:hover {
+      background: rgba(239,68,68,0.1);
+      border-color: #ef4444;
+    }
+
+    .no-castigos {
+      color: var(--text-dim);
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
+
+    /* ANIMACIONES */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .stat-card:nth-child(1) { animation-delay: 0.1s; }
+    .stat-card:nth-child(2) { animation-delay: 0.2s; }
+    .stat-card:nth-child(3) { animation-delay: 0.3s; }
+    .stat-card:nth-child(4) { animation-delay: 0.4s; }
+    .stat-card:nth-child(5) { animation-delay: 0.5s; }
+    .stat-card:nth-child(6) { animation-delay: 0.6s; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="header">
+      <div class="app-title">Awakening</div>
+      <div class="player-name" id="player-name">—</div>
+      <div class="level-badge">
+        <div class="level-num" id="nivel-general">1</div>
+        <div class="level-sep"></div>
+        <div class="level-name" id="nombre-nivel">Dormido</div>
+      </div>
+      <div class="xp-total" id="xp-total">0 XP TOTAL</div>
+    </div>
+
+    <nav class="nav">
+      <a href="/status" class="active">Status</a>
+      <a href="/habitos">Hábitos</a>
+      <a href="/entrenamiento">Entrenamiento</a>
+      <a href="/finanzas">Finanzas</a>
+    </nav>
+
+    <div class="stats-grid" id="stats-grid"></div>
+
+    <div class="castigos-section">
+      <div class="section-title">⚔ Zona de Castigo</div>
+      <div id="castigos-container">
+        <div class="no-castigos">Sin castigos pendientes.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const ICONS = {
+      Fuerza:       "💪",
+      Resistencia:  "🏃",
+      Conocimiento: "🧠",
+      Riqueza:      "💰",
+      Vitalidad:    "🥗",
+      Disciplina:   "🧘"
+    };
+
+    async function cargarStatus() {
+      const res = await fetch("/api/usuario/status");
+      const data = await res.json();
+
+      document.getElementById("player-name").textContent = data.nombre;
+      document.getElementById("nivel-general").textContent = `Nv. ${data.nivel_general}`;
+      document.getElementById("nombre-nivel").textContent = data.nombre_nivel;
+      document.getElementById("xp-total").textContent = `${data.xp_total.toLocaleString()} XP TOTAL`;
+
+      const grid = document.getElementById("stats-grid");
+      grid.innerHTML = "";
+
+      data.stats.forEach(stat => {
+        const pct = stat.xp_siguiente_nivel
+          ? Math.min((stat.xp_actual / stat.xp_siguiente_nivel) * 100, 100).toFixed(1)
+          : 100;
+
+        const card = document.createElement("div");
+        card.className = `stat-card ${stat.stat}`;
+        card.innerHTML = `
+          <div class="stat-header">
+            <div class="stat-icon-name">
+              <span class="stat-icon">${ICONS[stat.stat] || "⭐"}</span>
+              <span class="stat-name">${stat.stat}</span>
+            </div>
+            <div class="stat-level">
+              <div class="stat-level-num ${stat.stat}">Nv. ${stat.nivel}</div>
+              <div class="stat-level-name">${stat.nombre_nivel}</div>
+            </div>
+          </div>
+          <div class="xp-bar-container">
+            <div class="xp-labels">
+              <span>${stat.xp_actual.toLocaleString()} XP</span>
+              <span>${stat.xp_siguiente_nivel ? stat.xp_siguiente_nivel.toLocaleString() + " XP" : "MAX"}</span>
+            </div>
+            <div class="xp-bar-bg">
+              <div class="xp-bar-fill ${stat.stat}" data-pct="${pct}"></div>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      // Animar barras después de renderizar
+      setTimeout(() => {
+        document.querySelectorAll(".xp-bar-fill").forEach(bar => {
+          bar.style.width = bar.dataset.pct + "%";
+        });
+      }, 100);
+    }
+
+    async function cargarCastigos() {
+      const res = await fetch("/api/castigos/pendientes/1");
+      const castigos = await res.json();
+      const container = document.getElementById("castigos-container");
+
+      if (castigos.length === 0) {
+        container.innerHTML = '<div class="no-castigos">Sin castigos pendientes.</div>';
+        return;
+      }
+
+      container.innerHTML = castigos.map(c => `
+        <div class="castigo-card" id="castigo-${c.id}">
+          <div class="castigo-info">
+            <div class="castigo-habito">${c.habito_nombre}</div>
+            <div class="castigo-desc">${c.descripcion || "Castigo asignado"}</div>
+          </div>
+          <button class="btn-completar" onclick="completarCastigo(${c.id})">Completado</button>
+        </div>
+      `).join("");
+    }
+
+    async function completarCastigo(id) {
+      await fetch(`/api/castigos/completar/${id}`, { method: "POST" });
+      document.getElementById(`castigo-${id}`).remove();
+      const container = document.getElementById("castigos-container");
+      if (!container.querySelector(".castigo-card")) {
+        container.innerHTML = '<div class="no-castigos">Sin castigos pendientes.</div>';
+      }
+    }
+
+    cargarStatus();
+    cargarCastigos();
+  </script>
+</body>
+</html>

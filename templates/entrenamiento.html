@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Awakening — Entrenamiento</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #080810; --bg2: #0d0d1a; --panel: #11111f;
+      --border: #1e1e3a; --accent: #4f6ef7; --gold: #c9a84c;
+      --text: #e8e8f0; --text-dim: #6b6b8a;
+      --fuerza: #ef4444; --resistencia: #f97316;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'Rajdhani', sans-serif; min-height: 100vh;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(79,110,247,0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(124,58,237,0.08) 0%, transparent 50%);
+      pointer-events: none; z-index: 0;
+    }
+    .container { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+    .header { text-align: center; margin-bottom: 40px; animation: fadeDown 0.6s ease both; }
+    .app-title { font-family: 'Cinzel', serif; font-size: 13px; letter-spacing: 8px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 8px; }
+    .page-title { font-family: 'Cinzel', serif; font-size: 36px; font-weight: 900; background: linear-gradient(135deg, var(--text) 0%, var(--accent) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    nav.nav { display: flex; justify-content: center; gap: 8px; margin-bottom: 40px; }
+    nav.nav a { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--text-dim); text-decoration: none; padding: 8px 20px; border: 1px solid transparent; border-radius: 4px; transition: all 0.2s; }
+    nav.nav a:hover, nav.nav a.active { color: var(--text); border-color: var(--border); background: var(--panel); }
+    .section-title { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 4px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 12px; margin-top: 32px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 32px; }
+    .tab { background: transparent; border: 1px solid var(--border); border-radius: 4px; color: var(--text-dim); font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; padding: 10px 24px; cursor: pointer; transition: all 0.2s; }
+    .tab.active, .tab:hover { background: var(--panel); color: var(--text); border-color: var(--accent); }
+
+    /* Rutina del día */
+    .dia-card { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 24px; margin-bottom: 16px; }
+    .dia-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .dia-nombre { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; }
+    .dia-tipo { font-size: 12px; color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; }
+    .ejercicio-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .ejercicio-item:last-child { border-bottom: none; }
+    .ejercicio-bullet { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+    .ejercicio-nombre { flex: 1; font-size: 15px; font-weight: 600; }
+    .ejercicio-series { font-size: 13px; color: var(--text-dim); letter-spacing: 1px; }
+
+    /* Sesión activa */
+    .sesion-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 24px; }
+    .sesion-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .sesion-title { font-family: 'Cinzel', serif; font-size: 16px; font-weight: 700; letter-spacing: 2px; }
+    .sesion-timer { font-family: 'Cinzel', serif; font-size: 24px; font-weight: 700; color: var(--accent); }
+    .sets-list { margin-bottom: 20px; }
+    .set-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+    .set-row:last-child { border-bottom: none; }
+    .set-num { width: 24px; height: 24px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+    .set-ejercicio { flex: 1; font-weight: 600; }
+    .set-detalle { color: var(--text-dim); font-size: 13px; }
+    .add-set-form { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .form-input, .form-select {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 4px;
+      color: var(--text); font-family: 'Rajdhani', sans-serif; font-size: 14px;
+      padding: 8px 12px; transition: border-color 0.2s; width: 100%;
+    }
+    .form-input:focus, .form-select:focus { outline: none; border-color: var(--accent); }
+    .form-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 4px; display: block; }
+    .btn-primary { background: var(--accent); border: none; border-radius: 4px; color: white; font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; padding: 10px 20px; cursor: pointer; transition: opacity 0.2s; }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-danger { background: transparent; border: 1px solid #ef4444; border-radius: 4px; color: #ef4444; font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; padding: 10px 20px; cursor: pointer; transition: all 0.2s; }
+    .btn-danger:hover { background: rgba(239,68,68,0.1); }
+    .btn-secondary { background: transparent; border: 1px solid var(--border); border-radius: 4px; color: var(--text-dim); font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; padding: 10px 20px; cursor: pointer; transition: all 0.2s; }
+    .btn-secondary:hover { border-color: var(--text-dim); color: var(--text); }
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .no-sesion { text-align: center; padding: 40px; }
+    .no-sesion p { color: var(--text-dim); margin-bottom: 20px; font-size: 15px; letter-spacing: 1px; }
+
+    /* Historial */
+    .historial-item { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 16px 20px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .historial-fecha { font-family: 'Cinzel', serif; font-size: 13px; color: var(--gold); letter-spacing: 1px; }
+    .historial-rutina { font-size: 15px; font-weight: 600; }
+    .historial-duracion { font-size: 13px; color: var(--text-dim); }
+
+    @keyframes fadeDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="app-title">Awakening</div>
+    <div class="page-title">Entrenamiento</div>
+  </div>
+
+  <nav class="nav">
+    <a href="/status">Status</a>
+    <a href="/habitos">Hábitos</a>
+    <a href="/entrenamiento" class="active">Entrenamiento</a>
+    <a href="/finanzas">Finanzas</a>
+  </nav>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('hoy')">Hoy</button>
+    <button class="tab" onclick="showTab('sesion')">Sesión</button>
+    <button class="tab" onclick="showTab('historial')">Historial</button>
+  </div>
+
+  <!-- TAB HOY -->
+  <div id="tab-hoy">
+    <div class="section-title">Rutina de hoy</div>
+    <div id="rutina-hoy"></div>
+  </div>
+
+  <!-- TAB SESIÓN -->
+  <div id="tab-sesion" class="hidden">
+    <div id="sesion-container"></div>
+  </div>
+
+  <!-- TAB HISTORIAL -->
+  <div id="tab-historial" class="hidden">
+    <div class="section-title">Sesiones anteriores</div>
+    <div id="historial-list"></div>
+  </div>
+</div>
+
+<script>
+  const DIAS = ["Domingo","Lunes","Martes","Miercoles","Jueves","Viernes","Sabado"];
+  const diaHoy = DIAS[new Date().getDay()];
+  let sesionActiva = null;
+  let timerInterval = null;
+  let segundos = 0;
+  let ejerciciosCat = [];
+
+  function showTab(tab) {
+    ["hoy","sesion","historial"].forEach(t => {
+      document.getElementById(`tab-${t}`).classList.add("hidden");
+    });
+    document.getElementById(`tab-${tab}`).classList.remove("hidden");
+    document.querySelectorAll(".tab").forEach((el, i) => {
+      el.classList.toggle("active", ["hoy","sesion","historial"][i] === tab);
+    });
+    if (tab === "historial") cargarHistorial();
+    if (tab === "sesion") renderSesion();
+  }
+
+  async function cargarRutinaHoy() {
+    const res = await fetch(`/api/ejercicios/rutinas/${diaHoy}`);
+    const container = document.getElementById("rutina-hoy");
+
+    if (!res.ok) {
+      container.innerHTML = `
+        <div class="dia-card">
+          <div style="text-align:center; padding: 20px; color: var(--text-dim)">
+            <div style="font-size:32px; margin-bottom:12px">🌙</div>
+            <div style="font-family:'Cinzel',serif; font-size:16px">Día de descanso</div>
+            <div style="font-size:13px; margin-top:8px">No hay rutina asignada para hoy</div>
+          </div>
+        </div>`;
+      return;
+    }
+
+    const data = await res.json();
+    const ejercicios = data.ejercicios.map(e => `
+      <div class="ejercicio-item">
+        <div class="ejercicio-bullet"></div>
+        <div class="ejercicio-nombre">${e.nombre}</div>
+        <div class="ejercicio-series">${e.series ? e.series + " series" : ""} ${e.reps_objetivo ? "× " + e.reps_objetivo + " reps" : ""}</div>
+      </div>
+    `).join("");
+
+    container.innerHTML = `
+      <div class="dia-card">
+        <div class="dia-header">
+          <div>
+            <div class="dia-nombre">${data.rutina.nombre}</div>
+            <div class="dia-tipo">${diaHoy}</div>
+          </div>
+          <button class="btn-primary" onclick="iniciarSesion(${data.rutina.id})">Iniciar sesión</button>
+        </div>
+        ${ejercicios || '<div style="color:var(--text-dim)">Sin ejercicios definidos</div>'}
+      </div>`;
+  }
+
+  async function iniciarSesion(rutina_id) {
+    const res = await fetch("/api/ejercicios/sesiones", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rutina_id })
+    });
+    const data = await res.json();
+    sesionActiva = data.sesion_id;
+    segundos = 0;
+    timerInterval = setInterval(() => {
+      segundos++;
+      const m = Math.floor(segundos / 60).toString().padStart(2,"0");
+      const s = (segundos % 60).toString().padStart(2,"0");
+      const el = document.getElementById("timer");
+      if (el) el.textContent = `${m}:${s}`;
+    }, 1000);
+    showTab("sesion");
+  }
+
+  async function cargarEjercicios() {
+    const res = await fetch("/api/ejercicios/catalogo");
+    ejerciciosCat = await res.json();
+  }
+
+  function renderSesion() {
+    const container = document.getElementById("sesion-container");
+    if (!sesionActiva) {
+      container.innerHTML = `
+        <div class="no-sesion">
+          <p>No hay sesión activa</p>
+          <button class="btn-primary" onclick="showTab('hoy')">Ver rutina de hoy</button>
+        </div>`;
+      return;
+    }
+
+    const opts = ejerciciosCat.map(e => `<option value="${e.id}">${e.nombre}</option>`).join("");
+    container.innerHTML = `
+      <div class="sesion-panel">
+        <div class="sesion-header">
+          <div class="sesion-title">Sesión activa</div>
+          <div class="sesion-timer" id="timer">00:00</div>
+        </div>
+        <div class="sets-list" id="sets-list"></div>
+        <div class="add-set-form">
+          <div>
+            <label class="form-label">Ejercicio</label>
+            <select class="form-select" id="sel-ejercicio">${opts}</select>
+          </div>
+          <div>
+            <label class="form-label">Serie</label>
+            <input class="form-input" id="inp-serie" type="number" min="1" value="1">
+          </div>
+          <div>
+            <label class="form-label">Reps</label>
+            <input class="form-input" id="inp-reps" type="number" min="1" value="10">
+          </div>
+          <div>
+            <label class="form-label">Peso (kg)</label>
+            <input class="form-input" id="inp-peso" type="number" min="0" placeholder="—">
+          </div>
+        </div>
+        <div style="margin-bottom:8px">
+          <label class="form-label">Equipo</label>
+          <select class="form-select" id="sel-equipo">
+            <option value="Peso corporal">Peso corporal</option>
+            <option value="Mancuernas">Mancuernas</option>
+            <option value="Barra">Barra</option>
+            <option value="Maquina">Máquina</option>
+          </select>
+        </div>
+        <div class="btn-row" style="margin-top:16px">
+          <button class="btn-primary" onclick="addSet()">+ Añadir set</button>
+          <button class="btn-danger" onclick="cerrarSesion()">Cerrar sesión</button>
+        </div>
+      </div>`;
+
+    cargarSets();
+  }
+
+  async function cargarSets() {
+    const res = await fetch(`/api/ejercicios/sesiones/${sesionActiva}/sets`);
+    const sets = await res.json();
+    const list = document.getElementById("sets-list");
+    if (!list) return;
+    if (sets.length === 0) {
+      list.innerHTML = '<div style="color:var(--text-dim);font-size:14px;margin-bottom:16px">Sin sets registrados aún</div>';
+      return;
+    }
+    list.innerHTML = sets.map((s, i) => `
+      <div class="set-row">
+        <div class="set-num">${i+1}</div>
+        <div class="set-ejercicio">${s.nombre}</div>
+        <div class="set-detalle">${s.serie_num}ª serie · ${s.reps} reps ${s.peso_kg ? "· " + s.peso_kg + "kg" : ""} · ${s.equipo}</div>
+      </div>`).join("");
+  }
+
+  async function addSet() {
+    const ejercicio_id = parseInt(document.getElementById("sel-ejercicio").value);
+    const serie_num = parseInt(document.getElementById("inp-serie").value);
+    const reps = parseInt(document.getElementById("inp-reps").value);
+    const peso = parseFloat(document.getElementById("inp-peso").value) || null;
+    const equipo = document.getElementById("sel-equipo").value;
+
+    await fetch(`/api/ejercicios/sesiones/${sesionActiva}/sets`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ejercicio_id, serie_num, reps, peso_kg: peso, equipo })
+    });
+
+    // XP por set
+    await fetch("/api/usuario/xp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ stat_tipo: "Fuerza", xp: 10, motivo: "Set completado" })
+    });
+
+    cargarSets();
+  }
+
+  async function cerrarSesion() {
+    clearInterval(timerInterval);
+    const duracion = Math.floor(segundos / 60) || 1;
+    await fetch(`/api/ejercicios/sesiones/${sesionActiva}/cerrar`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ duracion_min: duracion })
+    });
+    // XP por sesión completa
+    await fetch("/api/usuario/xp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ stat_tipo: "Fuerza", xp: 50, motivo: "Sesion completada" })
+    });
+    sesionActiva = null;
+    showTab("historial");
+  }
+
+  async function cargarHistorial() {
+    const res = await fetch("/api/ejercicios/sesiones");
+    const sesiones = await res.json();
+    const list = document.getElementById("historial-list");
+    if (sesiones.length === 0) {
+      list.innerHTML = '<div style="color:var(--text-dim);font-size:14px">Sin sesiones registradas aún</div>';
+      return;
+    }
+    list.innerHTML = sesiones.map(s => `
+      <div class="historial-item">
+        <div>
+          <div class="historial-fecha">${s.fecha}</div>
+          <div class="historial-rutina">Sesión #${s.id}</div>
+        </div>
+        <div class="historial-duracion">${s.duracion_min ? s.duracion_min + " min" : "—"}</div>
+      </div>`).join("");
+  }
+
+  // Inicializar
+  cargarEjercicios();
+  cargarRutinaHoy();
+</script>
+</body>
+</html>

@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Awakening — Hábitos</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #080810;
+      --bg2:       #0d0d1a;
+      --panel:     #11111f;
+      --border:    #1e1e3a;
+      --accent:    #4f6ef7;
+      --gold:      #c9a84c;
+      --text:      #e8e8f0;
+      --text-dim:  #6b6b8a;
+      --success:   #22c55e;
+      --danger:    #ef4444;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Rajdhani', sans-serif;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(79,110,247,0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(124,58,237,0.08) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      animation: fadeDown 0.6s ease both;
+    }
+
+    .app-title {
+      font-family: 'Cinzel', serif;
+      font-size: 13px;
+      letter-spacing: 8px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .page-title {
+      font-family: 'Cinzel', serif;
+      font-size: 36px;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--text) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .fecha {
+      font-size: 13px;
+      color: var(--text-dim);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-top: 8px;
+    }
+
+    nav.nav {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 40px;
+    }
+
+    nav.nav a {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      text-decoration: none;
+      padding: 8px 20px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    nav.nav a:hover, nav.nav a.active {
+      color: var(--text);
+      border-color: var(--border);
+      background: var(--panel);
+    }
+
+    .section-title {
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      letter-spacing: 4px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      margin-top: 32px;
+    }
+
+    .habitos-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .habito-row {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: border-color 0.2s, transform 0.2s;
+      animation: fadeUp 0.4s ease both;
+      cursor: pointer;
+    }
+
+    .habito-row:hover {
+      transform: translateX(4px);
+      border-color: #2a2a4a;
+    }
+
+    .habito-row.completado {
+      border-color: rgba(34,197,94,0.3);
+      background: rgba(34,197,94,0.04);
+    }
+
+    .check-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .check-btn.done {
+      background: var(--success);
+      border-color: var(--success);
+    }
+
+    .habito-info {
+      flex: 1;
+    }
+
+    .habito-nombre {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+
+    .habito-meta {
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+      margin-top: 2px;
+    }
+
+    .habito-stat {
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      text-align: right;
+    }
+
+    /* Input minutos */
+    .minutos-input {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px;
+      padding: 4px 10px;
+      width: 80px;
+      text-align: center;
+    }
+
+    .minutos-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    /* Botón añadir hábito */
+    .btn-add {
+      background: transparent;
+      border: 1px dashed var(--border);
+      border-radius: 6px;
+      color: var(--text-dim);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      padding: 14px 20px;
+      width: 100%;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 8px;
+    }
+
+    .btn-add:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 32px;
+      width: 100%;
+      max-width: 420px;
+      animation: fadeUp 0.3s ease both;
+    }
+
+    .modal-title {
+      font-family: 'Cinzel', serif;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      letter-spacing: 2px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .form-input, .form-select {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 15px;
+      padding: 10px 14px;
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus, .form-select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .dias-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .dia-btn {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-dim);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      padding: 6px 4px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .dia-btn.selected {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 24px;
+    }
+
+    .btn-primary {
+      flex: 1;
+      background: var(--accent);
+      border: none;
+      border-radius: 4px;
+      color: white;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      padding: 12px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn-primary:hover { opacity: 0.85; }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-dim);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      padding: 12px 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--text-dim);
+      color: var(--text);
+    }
+
+    .progreso-dia {
+      text-align: center;
+      margin-bottom: 32px;
+      animation: fadeDown 0.6s ease 0.2s both;
+    }
+
+    .progreso-num {
+      font-family: 'Cinzel', serif;
+      font-size: 48px;
+      font-weight: 900;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .progreso-label {
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="header">
+      <div class="app-title">Awakening</div>
+      <div class="page-title">Hábitos</div>
+      <div class="fecha" id="fecha-hoy"></div>
+    </div>
+
+    <nav class="nav">
+      <a href="/status">Status</a>
+      <a href="/habitos" class="active">Hábitos</a>
+      <a href="/entrenamiento">Entrenamiento</a>
+      <a href="/finanzas">Finanzas</a>
+    </nav>
+
+    <div class="progreso-dia">
+      <div class="progreso-num" id="progreso-num">0/0</div>
+      <div class="progreso-label">Completados hoy</div>
+    </div>
+
+    <div class="section-title">Misiones de hoy</div>
+    <div class="habitos-list" id="habitos-list"></div>
+    <button class="btn-add" onclick="abrirModal()">+ Añadir hábito personalizado</button>
+
+  </div>
+
+  <!-- Modal nuevo hábito -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <div class="modal-title">Nuevo Hábito</div>
+
+      <div class="form-group">
+        <label class="form-label">Nombre</label>
+        <input class="form-input" id="input-nombre" type="text" placeholder="Ej: Meditación">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Stat asociado</label>
+        <select class="form-select" id="input-stat">
+          <option value="Fuerza">💪 Fuerza</option>
+          <option value="Resistencia">🏃 Resistencia</option>
+          <option value="Conocimiento">🧠 Conocimiento</option>
+          <option value="Riqueza">💰 Riqueza</option>
+          <option value="Vitalidad">🥗 Vitalidad</option>
+          <option value="Disciplina">🧘 Disciplina</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Tipo</label>
+        <select class="form-select" id="input-tipo">
+          <option value="bool">Sí / No</option>
+          <option value="minutos">Minutos</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="dias-group">
+        <label class="form-label">Días (vacío = diario)</label>
+        <div class="dias-grid">
+          <div class="dia-btn" data-dia="Lunes">L</div>
+          <div class="dia-btn" data-dia="Martes">M</div>
+          <div class="dia-btn" data-dia="Miercoles">X</div>
+          <div class="dia-btn" data-dia="Jueves">J</div>
+          <div class="dia-btn" data-dia="Viernes">V</div>
+          <div class="dia-btn" data-dia="Sabado">S</div>
+          <div class="dia-btn" data-dia="Domingo">D</div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
+        <button class="btn-primary" onclick="guardarHabito()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const DIAS = ["Lunes","Martes","Miercoles","Jueves","Viernes","Sabado","Domingo"];
+    const DIAS_CORTO = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
+    let registrosHoy = {};
+
+    function fechaHoy() {
+      const d = new Date();
+      return d.toLocaleDateString("es-ES", { weekday:"long", year:"numeric", month:"long", day:"numeric" });
+    }
+
+    document.getElementById("fecha-hoy").textContent = fechaHoy();
+
+    async function cargarHabitos() {
+      const [resHoy, resRegistro] = await Promise.all([
+        fetch("/api/habitos/hoy"),
+        fetch("/api/habitos/hoy/registro")
+      ]);
+      const habitos = await resHoy.json();
+      const registros = await resRegistro.json();
+
+      registros.forEach(r => {
+        registrosHoy[r.habito_id] = r;
+      });
+
+      const list = document.getElementById("habitos-list");
+      list.innerHTML = "";
+
+      let completados = 0;
+      habitos.forEach((h, i) => {
+        const reg = registrosHoy[h.id];
+        const done = reg && reg.completado;
+        if (done) completados++;
+
+        const row = document.createElement("div");
+        row.className = `habito-row ${done ? "completado" : ""}`;
+        row.id = `habito-${h.id}`;
+        row.style.animationDelay = `${i * 0.05}s`;
+
+        let extra = "";
+        if (h.tipo === "minutos") {
+          extra = `<input class="minutos-input" id="min-${h.id}" type="number" min="0"
+            placeholder="min" value="${reg ? reg.valor || "" : ""}"
+            onclick="event.stopPropagation()">`;
+        }
+
+        row.innerHTML = `
+          <button class="check-btn ${done ? "done" : ""}" id="check-${h.id}">
+            ${done ? "✓" : ""}
+          </button>
+          <div class="habito-info">
+            <div class="habito-nombre">${h.nombre}</div>
+            <div class="habito-meta">${h.stat_asociado} · ${h.es_diario ? "Diario" : "Días específicos"}</div>
+          </div>
+          ${extra}
+          <div class="habito-stat">${h.stat_asociado}</div>
+        `;
+
+        row.addEventListener("click", () => toggleHabito(h.id, h.tipo));
+        list.appendChild(row);
+      });
+
+      document.getElementById("progreso-num").textContent = `${completados}/${habitos.length}`;
+    }
+
+    async function toggleHabito(id, tipo) {
+      const reg = registrosHoy[id];
+      const done = reg && reg.completado;
+      const nuevoEstado = done ? 0 : 1;
+
+      let valor = null;
+      if (tipo === "minutos") {
+        const input = document.getElementById(`min-${id}`);
+        valor = input ? parseInt(input.value) || null : null;
+      }
+
+      await fetch("/api/habitos/registrar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ habito_id: id, completado: nuevoEstado, valor })
+      });
+
+      // Dar XP si se completa
+      if (nuevoEstado === 1) {
+        const xp = tipo === "minutos" ? (valor || 0) : 20;
+        await fetch("/api/usuario/xp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ stat_tipo: registrosHoy[id]?.stat_asociado || "Disciplina", xp, motivo: "Habito completado" })
+        });
+      }
+
+      await cargarHabitos();
+    }
+
+    // Modal
+    function abrirModal() {
+      document.getElementById("modal-overlay").classList.add("open");
+    }
+
+    function cerrarModal() {
+      document.getElementById("modal-overlay").classList.remove("open");
+    }
+
+    document.querySelectorAll(".dia-btn").forEach(btn => {
+      btn.addEventListener("click", () => btn.classList.toggle("selected"));
+    });
+
+    async function guardarHabito() {
+      const nombre = document.getElementById("input-nombre").value.trim();
+      const stat = document.getElementById("input-stat").value;
+      const tipo = document.getElementById("input-tipo").value;
+      const diasSeleccionados = [...document.querySelectorAll(".dia-btn.selected")]
+        .map(b => b.dataset.dia);
+
+      if (!nombre) return;
+
+      const body = {
+        nombre,
+        stat_asociado: stat,
+        tipo,
+        es_diario: diasSeleccionados.length === 0 ? 1 : 0,
+        dias_semana: diasSeleccionados.length > 0 ? diasSeleccionados : null
+      };
+
+      await fetch("/api/habitos/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+
+      cerrarModal();
+      document.getElementById("input-nombre").value = "";
+      document.querySelectorAll(".dia-btn.selected").forEach(b => b.classList.remove("selected"));
+      await cargarHabitos();
+    }
+
+    cargarHabitos();
+  </script>
+</body>
+</html>
