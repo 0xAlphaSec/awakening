@@ -48,7 +48,16 @@ def add_ejercicio_rutina(rutina_id):
         data.get("series"),
         data.get("reps_objetivo")
     )
-    return jsonify({"mensaje": "Ejercicio añadido a la rutina."}), 201
+    return jsonify({"mensaje": "Ejercicio añadido a la rutina."}), 
+
+@ejercicios_bp.route("/rutinas/<int:rutina_id>/ejercicios", methods=["GET"])
+def get_ejercicios_rutina(rutina_id):
+    ejercicios = Rutina.obtener_ejercicios(rutina_id)
+    rutina = Rutina.obtener_por_id(rutina_id)
+    return jsonify({
+        "rutina": dict(rutina) if rutina else {},
+        "ejercicios": [dict(e) for e in ejercicios]
+    })
 
 # ── SESIONES ─────────────────────────────────────────────
 
