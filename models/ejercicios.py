@@ -98,6 +98,16 @@ class Rutina:
         cur.close()
         conn.close()
         return ejercicios
+    
+    @staticmethod
+    def obtener_por_id(rutina_id): 
+        conn = get_connection()
+        cur = conn.cursor(cursor_factory=__import__('psycopg2').extras.RealDictCursor)
+        cur.execute("SELECT * FROM rutinas WHERE id = %s", (rutina_id,))
+        rutina = cur.fetchone()
+        cur.close()
+        conn.close()
+        return rutina
 
 
 class Sesion:
@@ -187,12 +197,3 @@ class Sesion:
         conn.close()
         return historial
     
-    @staticmethod
-    def obtener_por_id(rutina_id): 
-        conn = get_connection()
-        cur = conn.cursor(cursor_factory=__import__('psycopg2').extras.RealDictCursor)
-        cur.execute("SELECT * FROM rutinas WHERE id = %s", (rutina_id,))
-        rutina = cur.fetchone()
-        cur.close()
-        conn.close()
-        return rutina
