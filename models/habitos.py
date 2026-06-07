@@ -1,5 +1,6 @@
-from database import get_connection
+from database import get_connection, get_cursor
 from datetime import date, datetime
+import json
 
 DIAS_SEMANA = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"]
 
@@ -10,7 +11,6 @@ class Habito:
 
     @staticmethod
     def inicializar_habitos():
-        """Inserta los habitos predefinidos de Awakening si no existen."""
         habitos = [
             ("Entrenamiento de fuerza", "Fuerza",      "datos",   '["Lunes","Jueves","Viernes"]', 0),
             ("Cardio",                  "Resistencia",  "datos",   '["Martes","Sabado"]',          0),
@@ -28,31 +28,38 @@ class Habito:
         ]
 
         conn = get_connection()
-        existentes = conn.execute("SELECT COUNT(*) FROM habitos_cat").fetchone()[0]
+        cur = get_cursor(conn)
+        cur.execute("SELECT COUNT(*) FROM habitos_cat")
+        existentes = cur.fetchone()["count"]
         if existentes == 0:
-            conn.executemany(
+            cur.executemany(
                 """INSERT INTO habitos_cat
                    (nombre, stat_asociado, tipo, dias_semana, es_diario)
-                   VALUES (?, ?, ?, ?, ?)""",
+                   VALUES (%s, %s, %s, %s, %s)""",
                 habitos
             )
             conn.commit()
+        cur.close()
         conn.close()
 
     @staticmethod
     def obtener_todos():
         conn = get_connection()
-        habitos = conn.execute("SELECT * FROM habitos_cat").fetchall()
+        cur = get_cursor(conn)
+        cur.execute("SELECT * FROM habitos_cat")
+        habitos = cur.fetchall()
+        cur.close()
         conn.close()
         return habitos
 
     @staticmethod
     def obtener_habitos_hoy():
-        """Devuelve solo los habitos que corresponden al dia de hoy."""
-        import json
         dia_hoy = dia_semana_hoy()
         conn = get_connection()
-        habitos = conn.execute("SELECT * FROM habitos_cat").fetchall()
+        cur = get_cursor(conn)
+        cur.execute("SELECT * FROM habitos_cat")
+        habitos = cur.fetchall()
+        cur.close()
         conn.close()
 
         resultado = []
@@ -67,60 +74,60 @@ class Habito:
 
     @staticmethod
     def registrar(habito_id, completado, valor=None):
-        """
-        completado: 1 o 0
-        valor: minutos de estudio si el tipo es 'minutos', None en otros casos
-        """
         hoy = date.today().isoformat()
         conn = get_connection()
+        cur = get_cursor(conn)
 
-        existente = conn.execute(
-            "SELECT id FROM habitos_registro WHERE fecha = ? AND habito_id = ?",
+        cur.execute(
+            "SELECT id FROM habitos_registro WHERE fecha = %s AND habito_id = %s",
             (hoy, habito_id)
-        ).fetchone()
+        )
+        existente = cur.fetchone()
 
         if existente:
-            conn.execute(
-                "UPDATE habitos_registro SET completado = ?, valor = ? WHERE id = ?",
+            cur.execute(
+                "UPDATE habitos_registro SET completado = %s, valor = %s WHERE id = %s",
                 (completado, valor, existente["id"])
             )
         else:
-            conn.execute(
+            cur.execute(
                 """INSERT INTO habitos_registro (fecha, habito_id, completado, valor)
-                   VALUES (?, ?, ?, ?)""",
+                   VALUES (%s, %s, %s, %s)""",
                 (hoy, habito_id, completado, valor)
             )
 
         conn.commit()
+        cur.close()
         conn.close()
 
     @staticmethod
     def obtener_registro_hoy():
         hoy = date.today().isoformat()
         conn = get_connection()
-        registros = conn.execute(
+        cur = get_cursor(conn)
+        cur.execute(
             """SELECT hr.*, hc.nombre, hc.stat_asociado
                FROM habitos_registro hr
                JOIN habitos_cat hc ON hr.habito_id = hc.id
-               WHERE hr.fecha = ?""",
+               WHERE hr.fecha = %s""",
             (hoy,)
-        ).fetchall()
+        )
+        registros = cur.fetchall()
+        cur.close()
         conn.close()
         return registros
 
     @staticmethod
     def obtener_fallos_ayer():
-        """Devuelve los habitos que correspondian ayer y no se completaron."""
-        import json
         from datetime import timedelta
 
         ayer = (date.today() - timedelta(days=1)).isoformat()
-        dia_ayer = DIAS_SEMANA[
-            (datetime.today().weekday() - 1) % 7
-        ]
+        dia_ayer = DIAS_SEMANA[(datetime.today().weekday() - 1) % 7]
 
         conn = get_connection()
-        habitos = conn.execute("SELECT * FROM habitos_cat").fetchall()
+        cur = get_cursor(conn)
+        cur.execute("SELECT * FROM habitos_cat")
+        habitos = cur.fetchall()
 
         fallos = []
         for h in habitos:
@@ -133,27 +140,31 @@ class Habito:
                     aplicaba = True
 
             if aplicaba:
-                registro = conn.execute(
+                cur.execute(
                     """SELECT * FROM habitos_registro
-                       WHERE fecha = ? AND habito_id = ? AND completado = 1""",
+                       WHERE fecha = %s AND habito_id = %s AND completado = 1""",
                     (ayer, h["id"])
-                ).fetchone()
+                )
+                registro = cur.fetchone()
                 if not registro:
                     fallos.append(dict(h))
 
+        cur.close()
         conn.close()
         return fallos
 
     @staticmethod
     def racha(habito_id):
-        """Calcula los dias consecutivos que se ha cumplido un habito."""
         conn = get_connection()
-        registros = conn.execute(
+        cur = get_cursor(conn)
+        cur.execute(
             """SELECT fecha FROM habitos_registro
-               WHERE habito_id = ? AND completado = 1
+               WHERE habito_id = %s AND completado = 1
                ORDER BY fecha DESC""",
             (habito_id,)
-        ).fetchall()
+        )
+        registros = cur.fetchall()
+        cur.close()
         conn.close()
 
         if not registros:

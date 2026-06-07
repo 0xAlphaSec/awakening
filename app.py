@@ -31,7 +31,9 @@ def entrenamiento():
 def finanzas():
     return render_template("finanzas.html")
 
+# Inicialización al importar (funciona con gunicorn y con python app.py)
+init_db()
+Habito.inicializar_habitos()
+
 if __name__ == "__main__":
-    init_db()
-    Habito.inicializar_habitos()
     app.run(debug=True)

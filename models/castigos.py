@@ -1,4 +1,4 @@
-from database import get_connection
+from database import get_connection, get_cursor
 from datetime import date
 import random
 
@@ -58,64 +58,74 @@ class Castigo:
 
     @staticmethod
     def asignar_castigos(usuario_id, fallos, nivel_usuario):
-        """Asigna un castigo aleatorio por cada habito fallado."""
         conn = get_connection()
+        cur = get_cursor(conn)
         castigos_asignados = []
 
         for fallo in fallos:
             descripcion = Castigo.obtener_castigo_por_nivel(nivel_usuario)
-            cursor = conn.execute(
+            cur.execute(
                 """INSERT INTO castigos_activos
                    (usuario_id, castigo_id, fecha_asignado)
-                   VALUES (?, ?, ?)""",
+                   VALUES (%s, %s, %s) RETURNING id""",
                 (usuario_id, fallo["id"], date.today().isoformat())
             )
+            castigo_id = cur.fetchone()["id"]
             castigos_asignados.append({
                 "habito": fallo["nombre"],
                 "castigo": descripcion,
-                "id": cursor.lastrowid
+                "id": castigo_id
             })
 
         conn.commit()
+        cur.close()
         conn.close()
         return castigos_asignados
 
     @staticmethod
     def obtener_castigos_pendientes(usuario_id):
         conn = get_connection()
-        castigos = conn.execute(
+        cur = get_cursor(conn)
+        cur.execute(
             """SELECT ca.*, hc.nombre as habito_nombre
                FROM castigos_activos ca
                JOIN habitos_cat hc ON ca.castigo_id = hc.id
-               WHERE ca.usuario_id = ? AND ca.completado = 0
+               WHERE ca.usuario_id = %s AND ca.completado = 0
                ORDER BY ca.fecha_asignado DESC""",
             (usuario_id,)
-        ).fetchall()
+        )
+        castigos = cur.fetchall()
+        cur.close()
         conn.close()
         return castigos
 
     @staticmethod
     def completar_castigo(castigo_id):
         conn = get_connection()
-        conn.execute(
+        cur = get_cursor(conn)
+        cur.execute(
             """UPDATE castigos_activos
-               SET completado = 1, fecha_completado = ?
-               WHERE id = ?""",
+               SET completado = 1, fecha_completado = %s
+               WHERE id = %s""",
             (date.today().isoformat(), castigo_id)
         )
         conn.commit()
+        cur.close()
         conn.close()
 
     @staticmethod
     def obtener_historial(usuario_id):
         conn = get_connection()
-        historial = conn.execute(
+        cur = get_cursor(conn)
+        cur.execute(
             """SELECT ca.*, hc.nombre as habito_nombre
                FROM castigos_activos ca
                JOIN habitos_cat hc ON ca.castigo_id = hc.id
-               WHERE ca.usuario_id = ?
+               WHERE ca.usuario_id = %s
                ORDER BY ca.fecha_asignado DESC""",
             (usuario_id,)
-        ).fetchall()
+        )
+        historial = cur.fetchall()
+        cur.close()
         conn.close()
         return historial

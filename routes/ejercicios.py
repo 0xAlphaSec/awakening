@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from models.ejercicios import Ejercicio, Rutina, Sesion
-from database import get_connection
+from database import get_connection, get_cursor
 
 ejercicios_bp = Blueprint("ejercicios", __name__, url_prefix="/api/ejercicios")
 
@@ -113,8 +113,10 @@ def get_progresion(ejercicio_id):
 @ejercicios_bp.route("/catalogo/<int:ejercicio_id>", methods=["DELETE"])
 def delete_ejercicio(ejercicio_id):
     conn = get_connection()
-    conn.execute("DELETE FROM ejercicios_cat WHERE id = ?", (ejercicio_id,))
+    cur = get_cursor(conn)
+    cur.execute("DELETE FROM ejercicios_cat WHERE id = %s", (ejercicio_id,))
     conn.commit()
+    cur.close()
     conn.close()
     return jsonify({"mensaje": "Ejercicio eliminado."})
 
@@ -122,22 +124,26 @@ def delete_ejercicio(ejercicio_id):
 def edit_ejercicio(ejercicio_id):
     data = request.get_json()
     conn = get_connection()
-    conn.execute(
+    cur = get_cursor(conn)
+    cur.execute(
         """UPDATE ejercicios_cat
-           SET nombre = ?, grupo_muscular = ?, equipo_default = ?
-           WHERE id = ?""",
+           SET nombre = %s, grupo_muscular = %s, equipo_default = %s
+           WHERE id = %s""",
         (data["nombre"], data.get("grupo_muscular"), data.get("equipo_default"), ejercicio_id)
     )
     conn.commit()
+    cur.close()
     conn.close()
     return jsonify({"mensaje": "Ejercicio actualizado."})
 
 @ejercicios_bp.route("/rutinas/<int:rutina_id>", methods=["DELETE"])
 def delete_rutina(rutina_id):
     conn = get_connection()
-    conn.execute("DELETE FROM rutina_ejercicios WHERE rutina_id = ?", (rutina_id,))
-    conn.execute("DELETE FROM rutinas WHERE id = ?", (rutina_id,))
+    cur = get_cursor(conn)
+    cur.execute("DELETE FROM rutina_ejercicios WHERE rutina_id = %s", (rutina_id,))
+    cur.execute("DELETE FROM rutinas WHERE id = %s", (rutina_id,))
     conn.commit()
+    cur.close()
     conn.close()
     return jsonify({"mensaje": "Rutina eliminada."})
 
@@ -145,22 +151,26 @@ def delete_rutina(rutina_id):
 def edit_rutina(rutina_id):
     data = request.get_json()
     conn = get_connection()
-    conn.execute(
-        """UPDATE rutinas SET nombre = ?, dia_semana = ?, descripcion = ?
-           WHERE id = ?""",
+    cur = get_cursor(conn)
+    cur.execute(
+        """UPDATE rutinas SET nombre = %s, dia_semana = %s, descripcion = %s
+           WHERE id = %s""",
         (data["nombre"], data["dia_semana"], data.get("descripcion"), rutina_id)
     )
     conn.commit()
+    cur.close()
     conn.close()
     return jsonify({"mensaje": "Rutina actualizada."})
 
 @ejercicios_bp.route("/rutinas/<int:rutina_id>/ejercicios/<int:ejercicio_id>", methods=["DELETE"])
 def delete_ejercicio_rutina(rutina_id, ejercicio_id):
     conn = get_connection()
-    conn.execute(
-        "DELETE FROM rutina_ejercicios WHERE rutina_id = ? AND ejercicio_id = ?",
+    cur = get_cursor(conn)
+    cur.execute(
+        "DELETE FROM rutina_ejercicios WHERE rutina_id = %s AND ejercicio_id = %s",
         (rutina_id, ejercicio_id)
     )
     conn.commit()
+    cur.close()
     conn.close()
     return jsonify({"mensaje": "Ejercicio eliminado de la rutina."})

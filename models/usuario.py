@@ -1,4 +1,4 @@
-from database import get_connection
+from database import get_connection, get_cursor
 from datetime import date
 
 NIVELES = [
@@ -47,86 +47,95 @@ class Usuario:
     @staticmethod
     def crear(nombre):
         conn = get_connection()
-        existente = conn.execute("SELECT id FROM usuario LIMIT 1").fetchone()
+        cur = get_cursor(conn)
+        cur.execute("SELECT id FROM usuario LIMIT 1")
+        existente = cur.fetchone()
         if existente:
+            cur.close()
             conn.close()
             return existente["id"]
 
-        cursor = conn.execute(
-            "INSERT INTO usuario (nombre, nivel_general, xp_total) VALUES (?, 1, 0)",
+        cur.execute(
+            "INSERT INTO usuario (nombre, nivel_general, xp_total) VALUES (%s, 1, 0) RETURNING id",
             (nombre,)
         )
-        usuario_id = cursor.lastrowid
+        usuario_id = cur.fetchone()["id"]
 
         for stat in STATS:
-            conn.execute(
-                "INSERT INTO stats (usuario_id, tipo_stat, xp_actual, nivel_actual) VALUES (?, ?, 0, 1)",
+            cur.execute(
+                "INSERT INTO stats (usuario_id, tipo_stat, xp_actual, nivel_actual) VALUES (%s, %s, 0, 1)",
                 (usuario_id, stat)
             )
 
         conn.commit()
+        cur.close()
         conn.close()
         return usuario_id
 
     @staticmethod
     def obtener():
         conn = get_connection()
-        usuario = conn.execute("SELECT * FROM usuario LIMIT 1").fetchone()
+        cur = get_cursor(conn)
+        cur.execute("SELECT * FROM usuario LIMIT 1")
+        usuario = cur.fetchone()
+        cur.close()
         conn.close()
         return dict(usuario) if usuario else None
 
     @staticmethod
     def ganar_xp(stat_tipo, xp, motivo=""):
         conn = get_connection()
-        usuario = conn.execute("SELECT * FROM usuario LIMIT 1").fetchone()
+        cur = get_cursor(conn)
+        cur.execute("SELECT * FROM usuario LIMIT 1")
+        usuario = cur.fetchone()
         if not usuario:
+            cur.close()
             conn.close()
             return None
 
         usuario_id = usuario["id"]
 
-        # Actualizar XP del stat
-        stat = conn.execute(
-            "SELECT * FROM stats WHERE usuario_id = ? AND tipo_stat = ?",
+        cur.execute(
+            "SELECT * FROM stats WHERE usuario_id = %s AND tipo_stat = %s",
             (usuario_id, stat_tipo)
-        ).fetchone()
+        )
+        stat = cur.fetchone()
 
         nueva_xp = stat["xp_actual"] + xp
         nuevo_nivel = stat["nivel_actual"]
 
-        # Subir nivel si corresponde
         for (nmin, nmax, _, xp_req) in NIVELES:
             if nueva_xp >= xp_req:
                 nuevo_nivel = nmin
             else:
                 break
 
-        conn.execute(
-            "UPDATE stats SET xp_actual = ?, nivel_actual = ? WHERE id = ?",
+        cur.execute(
+            "UPDATE stats SET xp_actual = %s, nivel_actual = %s WHERE id = %s",
             (nueva_xp, nuevo_nivel, stat["id"])
         )
 
-        # Registrar en historial
-        conn.execute(
+        cur.execute(
             """INSERT INTO xp_historial (usuario_id, stat_tipo, xp_ganada, motivo, fecha)
-               VALUES (?, ?, ?, ?, ?)""",
+               VALUES (%s, %s, %s, %s, %s)""",
             (usuario_id, stat_tipo, xp, motivo, date.today().isoformat())
         )
 
-        # Actualizar XP total y nivel general del usuario
         nueva_xp_total = usuario["xp_total"] + xp
-        stats_niveles = conn.execute(
-            "SELECT nivel_actual FROM stats WHERE usuario_id = ?",
+        cur.execute(
+            "SELECT nivel_actual FROM stats WHERE usuario_id = %s",
             (usuario_id,)
-        ).fetchall()
+        )
+        stats_niveles = cur.fetchall()
         nivel_general = round(sum(s["nivel_actual"] for s in stats_niveles) / len(stats_niveles))
 
-        conn.execute(
-            "UPDATE usuario SET xp_total = ?, nivel_general = ? WHERE id = ?",
+        cur.execute(
+            "UPDATE usuario SET xp_total = %s, nivel_general = %s WHERE id = %s",
             (nueva_xp_total, nivel_general, usuario_id)
         )
 
         conn.commit()
+        cur.close()
         conn.close()
 
         return {
@@ -140,15 +149,21 @@ class Usuario:
     @staticmethod
     def status_screen():
         conn = get_connection()
-        usuario = conn.execute("SELECT * FROM usuario LIMIT 1").fetchone()
+        cur = get_cursor(conn)
+        cur.execute("SELECT * FROM usuario LIMIT 1")
+        usuario = cur.fetchone()
         if not usuario:
+            cur.close()
             conn.close()
             return None
 
-        stats = conn.execute(
-            "SELECT * FROM stats WHERE usuario_id = ?",
+        cur.execute(
+            "SELECT * FROM stats WHERE usuario_id = %s",
             (usuario["id"],)
-        ).fetchall()
+        )
+        stats = cur.fetchall()
+        cur.close()
+        conn.close()
 
         resultado = {
             "nombre": usuario["nombre"],
@@ -167,5 +182,4 @@ class Usuario:
                 "xp_siguiente_nivel": xp_para_nivel(s["nivel_actual"] + 1) if s["nivel_actual"] < 100 else None
             })
 
-        conn.close()
         return resultado

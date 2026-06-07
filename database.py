@@ -1,31 +1,34 @@
-import sqlite3
 import os
+import psycopg2
+import psycopg2.extras
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "awakening.db")
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 def get_connection():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+    conn = psycopg2.connect(DATABASE_URL)
     return conn
+
+def get_cursor(conn):
+    return conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
 def init_db():
     conn = get_connection()
-    cursor = conn.cursor()
+    cur = get_cursor(conn)
 
     # ── USUARIO ──────────────────────────────────────────
-    cursor.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS usuario (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             nombre TEXT NOT NULL,
             nivel_general INTEGER DEFAULT 1,
             xp_total INTEGER DEFAULT 0,
-            fecha_registro TEXT DEFAULT (date('now'))
+            fecha_registro TEXT DEFAULT (CURRENT_DATE::text)
         )
     """)
 
-    cursor.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS stats (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             usuario_id INTEGER NOT NULL,
             tipo_stat TEXT NOT NULL,
             xp_actual INTEGER DEFAULT 0,
@@ -34,31 +37,31 @@ def init_db():
         )
     """)
 
-    cursor.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS xp_historial (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             usuario_id INTEGER NOT NULL,
             stat_tipo TEXT NOT NULL,
             xp_ganada INTEGER NOT NULL,
             motivo TEXT,
-            fecha TEXT DEFAULT (date('now')),
+            fecha TEXT DEFAULT (CURRENT_DATE::text),
             FOREIGN KEY (usuario_id) REFERENCES usuario(id)
         )
     """)
 
     # ── FINANZAS ──────────────────────────────────────────
-    cursor.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS gastos_fijos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             concepto TEXT NOT NULL,
             monto REAL NOT NULL,
             activo INTEGER DEFAULT 1
         )
     """)
 
-    cursor.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS finanzas_mes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             fecha TEXT NOT NULL,
             sueldo_neto REAL NOT NULL,
             disponible_real REAL NOT NULL,
@@ -66,9 +69,9 @@ def init_db():
         )
     """)
 
-    cursor.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS transacciones (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             fecha TEXT NOT NULL,
             categoria TEXT NOT NULL,
             concepto TEXT,
@@ -77,9 +80,9 @@ def init_db():
         )
     """)
 
-    cursor.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS colchon (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             meta_monto REAL NOT NULL,
             acumulado REAL DEFAULT 0,
             completado INTEGER DEFAULT 0,
@@ -87,9 +90,9 @@ def init_db():
         )
     """)
 
-    cursor.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS etf (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             fecha TEXT NOT NULL,
             aportacion_mensual REAL NOT NULL,
             total_acumulado REAL DEFAULT 0
@@ -97,27 +100,27 @@ def init_db():
     """)
 
     # ── ENTRENAMIENTO ─────────────────────────────────────
-    cursor.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS ejercicios_cat (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             nombre TEXT NOT NULL,
             grupo_muscular TEXT,
             equipo_default TEXT
         )
     """)
 
-    cursor.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS rutinas (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             nombre TEXT NOT NULL,
             dia_semana TEXT NOT NULL,
             descripcion TEXT
         )
     """)
 
-    cursor.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS rutina_ejercicios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             rutina_id INTEGER NOT NULL,
             ejercicio_id INTEGER NOT NULL,
             series INTEGER,
@@ -127,9 +130,9 @@ def init_db():
         )
     """)
 
-    cursor.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS sesiones (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             fecha TEXT NOT NULL,
             rutina_id INTEGER,
             duracion_min INTEGER,
@@ -138,9 +141,9 @@ def init_db():
         )
     """)
 
-    cursor.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS sesion_sets (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             sesion_id INTEGER NOT NULL,
             ejercicio_id INTEGER NOT NULL,
             serie_num INTEGER,
@@ -153,9 +156,9 @@ def init_db():
     """)
 
     # ── HABITOS ───────────────────────────────────────────
-    cursor.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS habitos_cat (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             nombre TEXT NOT NULL,
             stat_asociado TEXT NOT NULL,
             tipo TEXT NOT NULL,
@@ -164,9 +167,9 @@ def init_db():
         )
     """)
 
-    cursor.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS habitos_registro (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             fecha TEXT NOT NULL,
             habito_id INTEGER NOT NULL,
             completado INTEGER DEFAULT 0,
@@ -176,40 +179,40 @@ def init_db():
     """)
 
     # ── ZONA DE CASTIGO ───────────────────────────────────
-    cursor.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS castigos_cat (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             descripcion TEXT NOT NULL,
             nivel_min INTEGER NOT NULL,
             nivel_max INTEGER NOT NULL
         )
     """)
 
-    cursor.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS castigos_activos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             usuario_id INTEGER NOT NULL,
             castigo_id INTEGER NOT NULL,
-            fecha_asignado TEXT DEFAULT (date('now')),
+            fecha_asignado TEXT DEFAULT (CURRENT_DATE::text),
             completado INTEGER DEFAULT 0,
             fecha_completado TEXT,
             FOREIGN KEY (usuario_id) REFERENCES usuario(id),
-            FOREIGN KEY (castigo_id) REFERENCES castigos_cat(id)
+            FOREIGN KEY (castigo_id) REFERENCES habitos_cat(id)
         )
     """)
 
     # ── GASTOS PERSONALES ─────────────────────────────────
-    cursor.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS gastos_personales_cat (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             nombre TEXT NOT NULL,
             es_predefinida INTEGER DEFAULT 1
         )
     """)
 
-    cursor.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS gastos_personales (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             categoria_id INTEGER NOT NULL,
             monto_estimado REAL NOT NULL,
             activo INTEGER DEFAULT 1,
@@ -218,21 +221,23 @@ def init_db():
     """)
 
     conn.commit()
+
     # Categorías predefinidas de gastos personales
-    cats = conn.execute(
-        "SELECT COUNT(*) FROM gastos_personales_cat"
-    ).fetchone()[0]
+    cur.execute("SELECT COUNT(*) FROM gastos_personales_cat")
+    cats = cur.fetchone()["count"]
     if cats == 0:
         predefinidas = [
             ("Gimnasio",), ("Transporte",), ("Alimentacion saludable",),
             ("Ropa",), ("Formacion / Cursos",), ("Higiene personal",),
             ("Ocio",), ("Suplementos",)
         ]
-        conn.executemany(
-            "INSERT INTO gastos_personales_cat (nombre) VALUES (?)",
+        cur.executemany(
+            "INSERT INTO gastos_personales_cat (nombre) VALUES (%s)",
             predefinidas
         )
         conn.commit()
+
+    cur.close()
     conn.close()
     print("Base de datos inicializada correctamente.")
 

@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from models.habitos import Habito
-from database import get_connection
+from database import get_connection, get_cursor
+import json
 
 habitos_bp = Blueprint("habitos", __name__, url_prefix="/api/habitos")
 
@@ -58,12 +59,12 @@ def get_racha(habito_id):
 @habitos_bp.route("/<int:habito_id>", methods=["PUT"])
 def edit_habito(habito_id):
     data = request.get_json()
-    import json
     conn = get_connection()
-    conn.execute(
+    cur = get_cursor(conn)
+    cur.execute(
         """UPDATE habitos_cat
-           SET nombre = ?, stat_asociado = ?, tipo = ?, dias_semana = ?, es_diario = ?
-           WHERE id = ?""",
+           SET nombre = %s, stat_asociado = %s, tipo = %s, dias_semana = %s, es_diario = %s
+           WHERE id = %s""",
         (
             data["nombre"],
             data["stat_asociado"],
@@ -74,25 +75,28 @@ def edit_habito(habito_id):
         )
     )
     conn.commit()
+    cur.close()
     conn.close()
     return jsonify({"mensaje": "Habito actualizado."})
 
 @habitos_bp.route("/<int:habito_id>", methods=["DELETE"])
 def delete_habito(habito_id):
     conn = get_connection()
-    conn.execute("DELETE FROM habitos_cat WHERE id = ?", (habito_id,))
+    cur = get_cursor(conn)
+    cur.execute("DELETE FROM habitos_cat WHERE id = %s", (habito_id,))
     conn.commit()
+    cur.close()
     conn.close()
     return jsonify({"mensaje": "Habito eliminado."})
 
 @habitos_bp.route("/", methods=["POST"])
 def add_habito():
     data = request.get_json()
-    import json
     conn = get_connection()
-    conn.execute(
+    cur = get_cursor(conn)
+    cur.execute(
         """INSERT INTO habitos_cat (nombre, stat_asociado, tipo, dias_semana, es_diario)
-           VALUES (?, ?, ?, ?, ?)""",
+           VALUES (%s, %s, %s, %s, %s)""",
         (
             data["nombre"],
             data["stat_asociado"],
@@ -102,5 +106,6 @@ def add_habito():
         )
     )
     conn.commit()
+    cur.close()
     conn.close()
     return jsonify({"mensaje": "Habito creado."}), 201
