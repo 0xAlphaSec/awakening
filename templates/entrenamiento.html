@@ -225,9 +225,8 @@
       <div class="form-group">
         <label class="form-label">Tipo de ejercicio</label>
         <div class="tipo-grid">
-          <div class="tipo-btn selected" data-tipo="repeticiones" onclick="selTipo(this)">Repeticiones</div>
           <div class="tipo-btn" data-tipo="tiempo" onclick="selTipo(this)">Tiempo</div>
-          <div class="tipo-btn" data-tipo="peso_corporal" onclick="selTipo(this)">Peso corporal</div>
+          <div class="tipo-btn" data-tipo="peso" onclick="selTipo(this)">Peso</div>
         </div>
       </div>
       <div class="form-group">
@@ -593,7 +592,6 @@
             <option value="Barra">Barra</option>
             <option value="Maquina">Máquina</option>
             <option value="Bandas">Bandas</option>
-            <option value="Kettlebell">Kettlebell</option>
           </select>
         </div>
         <div class="btn-row" style="margin-top:16px">
@@ -658,7 +656,8 @@
     const esTiempo = tipo === 'tiempo';
     const reps = esTiempo ? null : parseInt(document.getElementById("inp-reps").value);
     const duracion_seg = esTiempo ? parseInt(document.getElementById("inp-tiempo").value) : null;
-    const peso = tipo === 'peso_corporal' || esTiempo ? null : parseFloat(document.getElementById("inp-peso").value) || null;
+    const equipoVal = document.getElementById("sel-equipo").value;
+    const peso = (esTiempo || equipoVal === "Peso corporal") ? null : parseFloat(document.getElementById("inp-peso").value) || null;
     const equipo = document.getElementById("sel-equipo").value;
 
     await fetch(`/api/ejercicios/sesiones/${sesionActiva}/sets`, {
