@@ -413,12 +413,23 @@ async function registrarSueldo() {
   }
 
   if (colchonMonto > 0) {
-    await fetch("/api/finanzas/colchon/actualizar", {
+  const colchonCheck = await fetch("/api/finanzas/colchon");
+  if (!colchonCheck.ok) {
+    const gastosFijosRes = await fetch("/api/finanzas/gastos-fijos");
+    const gastosFijos = await gastosFijosRes.json();
+    const totalFijos = gastosFijos.reduce((acc, g) => acc + g.monto, 0);
+    await fetch("/api/finanzas/colchon/inicializar", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ monto: colchonMonto })
+      body: JSON.stringify({ gastos_esenciales_mes: totalFijos })
     });
   }
+  await fetch("/api/finanzas/colchon/actualizar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ monto: colchonMonto })
+  });
+}
 
   await fetch("/api/usuario/xp", {
     method: "POST",
