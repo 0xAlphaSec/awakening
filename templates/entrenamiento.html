@@ -13,12 +13,10 @@
       --border: #1e1e3a; --accent: #4f6ef7; --gold: #c9a84c;
       --text: #e8e8f0; --text-dim: #6b6b8a;
       --fuerza: #ef4444; --resistencia: #f97316;
+      --success: #22c55e; --danger: #ef4444;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: var(--bg); color: var(--text);
-      font-family: 'Rajdhani', sans-serif; min-height: 100vh;
-    }
+    body { background: var(--bg); color: var(--text); font-family: 'Rajdhani', sans-serif; min-height: 100vh; }
     body::before {
       content: ''; position: fixed; inset: 0;
       background:
@@ -37,6 +35,7 @@
     .tabs { display: flex; gap: 8px; margin-bottom: 32px; }
     .tab { background: transparent; border: 1px solid var(--border); border-radius: 4px; color: var(--text-dim); font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; padding: 10px 24px; cursor: pointer; transition: all 0.2s; }
     .tab.active, .tab:hover { background: var(--panel); color: var(--text); border-color: var(--accent); }
+    .hidden { display: none; }
 
     /* Rutina del día */
     .dia-card { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 24px; margin-bottom: 16px; }
@@ -61,13 +60,10 @@
     .set-ejercicio { flex: 1; font-weight: 600; }
     .set-detalle { color: var(--text-dim); font-size: 13px; }
     .add-set-form { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-    .form-input, .form-select {
-      background: var(--bg2); border: 1px solid var(--border); border-radius: 4px;
-      color: var(--text); font-family: 'Rajdhani', sans-serif; font-size: 14px;
-      padding: 8px 12px; transition: border-color 0.2s; width: 100%;
-    }
+    .form-input, .form-select { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: 'Rajdhani', sans-serif; font-size: 14px; padding: 8px 12px; transition: border-color 0.2s; width: 100%; }
     .form-input:focus, .form-select:focus { outline: none; border-color: var(--accent); }
     .form-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 4px; display: block; }
+    .form-group { margin-bottom: 12px; }
     .btn-primary { background: var(--accent); border: none; border-radius: 4px; color: white; font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; padding: 10px 20px; cursor: pointer; transition: opacity 0.2s; }
     .btn-primary:hover { opacity: 0.85; }
     .btn-danger { background: transparent; border: 1px solid #ef4444; border-radius: 4px; color: #ef4444; font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; padding: 10px 20px; cursor: pointer; transition: all 0.2s; }
@@ -75,6 +71,8 @@
     .btn-secondary { background: transparent; border: 1px solid var(--border); border-radius: 4px; color: var(--text-dim); font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; padding: 10px 20px; cursor: pointer; transition: all 0.2s; }
     .btn-secondary:hover { border-color: var(--text-dim); color: var(--text); }
     .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-add { background: transparent; border: 1px dashed var(--border); border-radius: 6px; color: var(--text-dim); font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; padding: 14px 20px; width: 100%; cursor: pointer; transition: all 0.2s; margin-top: 8px; }
+    .btn-add:hover { border-color: var(--accent); color: var(--accent); }
     .no-sesion { text-align: center; padding: 40px; }
     .no-sesion p { color: var(--text-dim); margin-bottom: 20px; font-size: 15px; letter-spacing: 1px; }
 
@@ -84,22 +82,47 @@
     .historial-rutina { font-size: 15px; font-weight: 600; }
     .historial-duracion { font-size: 13px; color: var(--text-dim); }
 
+    /* Rutinas */
+    .rutina-card { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 20px; margin-bottom: 12px; }
+    .rutina-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .rutina-card-nombre { font-family: 'Cinzel', serif; font-size: 16px; font-weight: 700; }
+    .rutina-card-dia { font-size: 12px; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+    .rutina-card-actions { display: flex; gap: 8px; }
+    .btn-icon { background: transparent; border: none; color: var(--text-dim); font-size: 16px; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: all 0.2s; }
+    .btn-icon:hover { color: var(--danger); background: rgba(239,68,68,0.1); }
+    .rutina-ejercicios-list { border-top: 1px solid var(--border); padding-top: 12px; }
+    .rutina-ejercicio-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+    .rutina-ejercicio-row:last-child { border-bottom: none; }
+    .rutina-ejercicio-nombre { flex: 1; font-weight: 600; }
+    .rutina-ejercicio-detalle { font-size: 12px; color: var(--text-dim); }
+    .rutina-ejercicio-tipo { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: none; align-items: center; justify-content: center; padding: 16px; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 32px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; animation: fadeUp 0.3s ease both; }
+    .modal-title { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; margin-bottom: 24px; letter-spacing: 2px; }
+    .modal-actions { display: flex; gap: 8px; margin-top: 24px; }
+    .tipo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; }
+    .tipo-btn { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; color: var(--text-dim); font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 10px 8px; cursor: pointer; text-align: center; transition: all 0.2s; }
+    .tipo-btn.selected { background: var(--accent); border-color: var(--accent); color: white; }
+
     @keyframes fadeDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-    .hidden { display: none; }
 
     @media (max-width: 600px) {
       .container { padding: 20px 16px; }
       .page-title { font-size: 28px; }
       nav.nav { gap: 4px; }
       nav.nav a { font-size: 11px; letter-spacing: 1px; padding: 8px 10px; }
-      .tabs { gap: 4px; }
-      .tab { padding: 8px 14px; font-size: 11px; letter-spacing: 1px; }
+      .tabs { gap: 4px; flex-wrap: wrap; }
+      .tab { padding: 8px 12px; font-size: 11px; letter-spacing: 1px; }
       .add-set-form { grid-template-columns: 1fr 1fr; }
       .btn-row { flex-direction: column; }
       .btn-row button { width: 100%; }
       .sesion-timer { font-size: 18px; }
+      .tipo-grid { grid-template-columns: 1fr; }
+      .rutina-card-header { flex-direction: column; align-items: flex-start; gap: 10px; }
     }
   </style>
 </head>
@@ -119,6 +142,7 @@
 
   <div class="tabs">
     <button class="tab active" onclick="showTab('hoy')">Hoy</button>
+    <button class="tab" onclick="showTab('rutinas')">Rutinas</button>
     <button class="tab" onclick="showTab('sesion')">Sesión</button>
     <button class="tab" onclick="showTab('historial')">Historial</button>
   </div>
@@ -127,6 +151,12 @@
   <div id="tab-hoy">
     <div class="section-title">Rutina de hoy</div>
     <div id="rutina-hoy"></div>
+  </div>
+
+  <!-- TAB RUTINAS -->
+  <div id="tab-rutinas" class="hidden">
+    <div id="rutinas-list"></div>
+    <button class="btn-add" onclick="abrirModalRutina()">+ Nueva rutina</button>
   </div>
 
   <!-- TAB SESIÓN -->
@@ -141,6 +171,113 @@
   </div>
 </div>
 
+<!-- Modal nueva rutina -->
+<div class="modal-overlay" id="modal-rutina">
+  <div class="modal">
+    <div class="modal-title">Nueva Rutina</div>
+    <div class="form-group">
+      <label class="form-label">Nombre</label>
+      <input class="form-input" id="inp-rutina-nombre" type="text" placeholder="Ej: Push Day">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Día de la semana</label>
+      <select class="form-select" id="inp-rutina-dia">
+        <option value="Lunes">Lunes</option>
+        <option value="Martes">Martes</option>
+        <option value="Miercoles">Miércoles</option>
+        <option value="Jueves">Jueves</option>
+        <option value="Viernes">Viernes</option>
+        <option value="Sabado">Sábado</option>
+        <option value="Domingo">Domingo</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Descripción (opcional)</label>
+      <input class="form-input" id="inp-rutina-desc" type="text" placeholder="Ej: Pecho, hombros y tríceps">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="cerrarModal('modal-rutina')">Cancelar</button>
+      <button class="btn-primary" onclick="guardarRutina()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal añadir ejercicio a rutina -->
+<div class="modal-overlay" id="modal-ejercicio-rutina">
+  <div class="modal">
+    <div class="modal-title">Añadir Ejercicio</div>
+    <input type="hidden" id="inp-rutina-id">
+    <div class="form-group">
+      <label class="form-label">Ejercicio</label>
+      <select class="form-select" id="sel-ejercicio-rutina">
+        <option value="__nuevo">+ Crear nuevo ejercicio</option>
+      </select>
+    </div>
+    <div id="nuevo-ejercicio-fields" class="hidden">
+      <div class="form-group">
+        <label class="form-label">Nombre del ejercicio</label>
+        <input class="form-input" id="inp-ej-nombre" type="text" placeholder="Ej: Press banca">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Grupo muscular</label>
+        <input class="form-input" id="inp-ej-musculo" type="text" placeholder="Ej: Pecho">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tipo de ejercicio</label>
+        <div class="tipo-grid">
+          <div class="tipo-btn selected" data-tipo="repeticiones" onclick="selTipo(this)">Repeticiones</div>
+          <div class="tipo-btn" data-tipo="tiempo" onclick="selTipo(this)">Tiempo</div>
+          <div class="tipo-btn" data-tipo="peso_corporal" onclick="selTipo(this)">Peso corporal</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Equipo por defecto</label>
+        <select class="form-select" id="inp-ej-equipo">
+          <option value="">Sin equipo</option>
+          <option value="Mancuernas">Mancuernas</option>
+          <option value="Barra">Barra</option>
+          <option value="Maquina">Máquina</option>
+          <option value="Bandas">Bandas</option>
+          <option value="Kettlebell">Kettlebell</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Series</label>
+      <input class="form-input" id="inp-ej-series" type="number" min="1" value="3">
+    </div>
+    <div class="form-group" id="field-reps">
+      <label class="form-label">Reps objetivo</label>
+      <input class="form-input" id="inp-ej-reps" type="number" min="1" value="10">
+    </div>
+    <div class="form-group hidden" id="field-tiempo">
+      <label class="form-label">Duración (segundos)</label>
+      <input class="form-input" id="inp-ej-tiempo" type="number" min="1" value="30">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="cerrarModal('modal-ejercicio-rutina')">Cancelar</button>
+      <button class="btn-primary" onclick="guardarEjercicioRutina()">Añadir</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal sesión libre -->
+<div class="modal-overlay" id="modal-sesion-libre">
+  <div class="modal">
+    <div class="modal-title">Nueva Sesión</div>
+    <div class="form-group">
+      <label class="form-label">Rutina (opcional)</label>
+      <select class="form-select" id="sel-rutina-sesion">
+        <option value="">Sesión libre</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="cerrarModal('modal-sesion-libre')">Cancelar</button>
+      <button class="btn-primary" onclick="confirmarIniciarSesion()">Iniciar</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const DIAS = ["Domingo","Lunes","Martes","Miercoles","Jueves","Viernes","Sabado"];
   const diaHoy = DIAS[new Date().getDay()];
@@ -148,18 +285,186 @@
   let timerInterval = null;
   let segundos = 0;
   let ejerciciosCat = [];
+  let rutinasCat = [];
+  let tipoEjercicioSeleccionado = 'repeticiones';
 
   function showTab(tab) {
-    ["hoy","sesion","historial"].forEach(t => {
+    ["hoy","rutinas","sesion","historial"].forEach(t => {
       document.getElementById(`tab-${t}`).classList.add("hidden");
     });
     document.getElementById(`tab-${tab}`).classList.remove("hidden");
     document.querySelectorAll(".tab").forEach((el, i) => {
-      el.classList.toggle("active", ["hoy","sesion","historial"][i] === tab);
+      el.classList.toggle("active", ["hoy","rutinas","sesion","historial"][i] === tab);
     });
     if (tab === "historial") cargarHistorial();
     if (tab === "sesion") renderSesion();
+    if (tab === "rutinas") cargarRutinas();
   }
+
+  function cerrarModal(id) {
+    document.getElementById(id).classList.remove("open");
+  }
+
+  // ── RUTINAS ──────────────────────────────────────────
+
+  async function cargarRutinas() {
+    const res = await fetch("/api/ejercicios/rutinas");
+    rutinasCat = await res.json();
+    const list = document.getElementById("rutinas-list");
+
+    if (rutinasCat.length === 0) {
+      list.innerHTML = '<div style="color:var(--text-dim);font-size:14px;margin-bottom:16px">Sin rutinas creadas aún</div>';
+      return;
+    }
+
+    list.innerHTML = rutinasCat.map(r => `
+      <div class="rutina-card" id="rutina-card-${r.id}">
+        <div class="rutina-card-header">
+          <div>
+            <div class="rutina-card-nombre">${r.nombre}</div>
+            <div class="rutina-card-dia">${r.dia_semana}${r.descripcion ? ' · ' + r.descripcion : ''}</div>
+          </div>
+          <div class="rutina-card-actions">
+            <button class="btn-secondary" style="padding:6px 14px;font-size:11px" onclick="abrirModalEjercicioRutina(${r.id})">+ Ejercicio</button>
+            <button class="btn-icon" onclick="eliminarRutina(${r.id})">✕</button>
+          </div>
+        </div>
+        <div class="rutina-ejercicios-list" id="ejs-rutina-${r.id}">
+          <div style="color:var(--text-dim);font-size:13px">Cargando...</div>
+        </div>
+      </div>
+    `).join("");
+
+    rutinasCat.forEach(r => cargarEjerciciosRutina(r.id));
+  }
+
+  async function cargarEjerciciosRutina(rutina_id) {
+    const res = await fetch(`/api/ejercicios/rutinas/${rutina_id}/ejercicios`);
+    const data = await res.json();
+    const container = document.getElementById(`ejs-rutina-${rutina_id}`);
+    if (!container) return;
+
+    if (!data.ejercicios || data.ejercicios.length === 0) {
+      container.innerHTML = '<div style="color:var(--text-dim);font-size:13px">Sin ejercicios añadidos</div>';
+      return;
+    }
+
+    container.innerHTML = data.ejercicios.map(e => {
+      let detalle = '';
+      if (e.tipo === 'tiempo') {
+        detalle = `${e.series || '—'} series × ${e.reps_objetivo || '—'}s`;
+      } else {
+        detalle = `${e.series || '—'} series × ${e.reps_objetivo || '—'} reps`;
+      }
+      return `
+        <div class="rutina-ejercicio-row">
+          <div class="ejercicio-bullet" style="width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0"></div>
+          <div class="rutina-ejercicio-nombre">${e.nombre}</div>
+          <div class="rutina-ejercicio-detalle">${detalle}</div>
+          <button class="btn-icon" style="font-size:13px" onclick="eliminarEjercicioRutina(${rutina_id}, ${e.ejercicio_id})">✕</button>
+        </div>`;
+    }).join("");
+  }
+
+  function abrirModalRutina() {
+    document.getElementById("inp-rutina-nombre").value = "";
+    document.getElementById("inp-rutina-desc").value = "";
+    document.getElementById("modal-rutina").classList.add("open");
+  }
+
+  async function guardarRutina() {
+    const nombre = document.getElementById("inp-rutina-nombre").value.trim();
+    const dia = document.getElementById("inp-rutina-dia").value;
+    const desc = document.getElementById("inp-rutina-desc").value.trim();
+    if (!nombre) return;
+    await fetch("/api/ejercicios/rutinas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nombre, dia_semana: dia, descripcion: desc || null })
+    });
+    cerrarModal("modal-rutina");
+    cargarRutinas();
+  }
+
+  async function eliminarRutina(id) {
+    if (!confirm("¿Eliminar esta rutina?")) return;
+    await fetch(`/api/ejercicios/rutinas/${id}`, { method: "DELETE" });
+    cargarRutinas();
+  }
+
+  async function eliminarEjercicioRutina(rutina_id, ejercicio_id) {
+    await fetch(`/api/ejercicios/rutinas/${rutina_id}/ejercicios/${ejercicio_id}`, { method: "DELETE" });
+    cargarEjerciciosRutina(rutina_id);
+  }
+
+  function abrirModalEjercicioRutina(rutina_id) {
+    document.getElementById("inp-rutina-id").value = rutina_id;
+    const sel = document.getElementById("sel-ejercicio-rutina");
+    sel.innerHTML = '<option value="__nuevo">+ Crear nuevo ejercicio</option>' +
+      ejerciciosCat.map(e => `<option value="${e.id}">${e.nombre}</option>`).join("");
+    sel.onchange = () => {
+      const nuevo = sel.value === "__nuevo";
+      document.getElementById("nuevo-ejercicio-fields").classList.toggle("hidden", !nuevo);
+    };
+    document.getElementById("nuevo-ejercicio-fields").classList.add("hidden");
+    tipoEjercicioSeleccionado = 'repeticiones';
+    document.querySelectorAll(".tipo-btn").forEach(b => b.classList.toggle("selected", b.dataset.tipo === 'repeticiones'));
+    document.getElementById("field-reps").classList.remove("hidden");
+    document.getElementById("field-tiempo").classList.add("hidden");
+    document.getElementById("modal-ejercicio-rutina").classList.add("open");
+  }
+
+  function selTipo(btn) {
+    tipoEjercicioSeleccionado = btn.dataset.tipo;
+    document.querySelectorAll(".tipo-btn").forEach(b => b.classList.remove("selected"));
+    btn.classList.add("selected");
+    const esTiempo = tipoEjercicioSeleccionado === 'tiempo';
+    document.getElementById("field-reps").classList.toggle("hidden", esTiempo);
+    document.getElementById("field-tiempo").classList.toggle("hidden", !esTiempo);
+  }
+
+  async function guardarEjercicioRutina() {
+    const rutina_id = parseInt(document.getElementById("inp-rutina-id").value);
+    const sel = document.getElementById("sel-ejercicio-rutina");
+    const series = parseInt(document.getElementById("inp-ej-series").value) || null;
+    const esTiempo = tipoEjercicioSeleccionado === 'tiempo';
+    const reps_objetivo = esTiempo
+      ? parseInt(document.getElementById("inp-ej-tiempo").value) || null
+      : parseInt(document.getElementById("inp-ej-reps").value) || null;
+
+    let ejercicio_id;
+
+    if (sel.value === "__nuevo") {
+      const nombre = document.getElementById("inp-ej-nombre").value.trim();
+      if (!nombre) return;
+      const res = await fetch("/api/ejercicios/catalogo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre,
+          grupo_muscular: document.getElementById("inp-ej-musculo").value.trim() || null,
+          equipo_default: document.getElementById("inp-ej-equipo").value || null,
+          tipo: tipoEjercicioSeleccionado
+        })
+      });
+      await cargarEjercicios();
+      ejercicio_id = ejerciciosCat[ejerciciosCat.length - 1]?.id;
+      if (!ejercicio_id) { cerrarModal("modal-ejercicio-rutina"); return; }
+    } else {
+      ejercicio_id = parseInt(sel.value);
+    }
+
+    await fetch(`/api/ejercicios/rutinas/${rutina_id}/ejercicios`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ejercicio_id, series, reps_objetivo })
+    });
+
+    cerrarModal("modal-ejercicio-rutina");
+    cargarEjerciciosRutina(rutina_id);
+  }
+
+  // ── HOY ──────────────────────────────────────────────
 
   async function cargarRutinaHoy() {
     const res = await fetch(`/api/ejercicios/rutinas/${diaHoy}`);
@@ -173,6 +478,9 @@
             <div style="font-family:'Cinzel',serif; font-size:16px">Día de descanso</div>
             <div style="font-size:13px; margin-top:8px">No hay rutina asignada para hoy</div>
           </div>
+          <div style="text-align:center;margin-top:16px">
+            <button class="btn-secondary" onclick="abrirModalSesionLibre()">Iniciar sesión libre</button>
+          </div>
         </div>`;
       return;
     }
@@ -182,7 +490,7 @@
       <div class="ejercicio-item">
         <div class="ejercicio-bullet"></div>
         <div class="ejercicio-nombre">${e.nombre}</div>
-        <div class="ejercicio-series">${e.series ? e.series + " series" : ""} ${e.reps_objetivo ? "× " + e.reps_objetivo + " reps" : ""}</div>
+        <div class="ejercicio-series">${e.series ? e.series + " series" : ""} ${e.reps_objetivo ? "× " + e.reps_objetivo + (e.tipo === 'tiempo' ? 's' : ' reps') : ""}</div>
       </div>
     `).join("");
 
@@ -199,11 +507,26 @@
       </div>`;
   }
 
+  // ── SESIÓN ───────────────────────────────────────────
+
+  function abrirModalSesionLibre() {
+    const sel = document.getElementById("sel-rutina-sesion");
+    sel.innerHTML = '<option value="">Sesión libre</option>' +
+      rutinasCat.map(r => `<option value="${r.id}">${r.nombre} (${r.dia_semana})</option>`).join("");
+    document.getElementById("modal-sesion-libre").classList.add("open");
+  }
+
+  async function confirmarIniciarSesion() {
+    const rutina_id = document.getElementById("sel-rutina-sesion").value || null;
+    cerrarModal("modal-sesion-libre");
+    await iniciarSesion(rutina_id ? parseInt(rutina_id) : null);
+  }
+
   async function iniciarSesion(rutina_id) {
     const res = await fetch("/api/ejercicios/sesiones", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rutina_id })
+      body: JSON.stringify({ rutina_id: rutina_id || null })
     });
     const data = await res.json();
     sesionActiva = data.sesion_id;
@@ -218,23 +541,21 @@
     showTab("sesion");
   }
 
-  async function cargarEjercicios() {
-    const res = await fetch("/api/ejercicios/catalogo");
-    ejerciciosCat = await res.json();
-  }
-
   function renderSesion() {
     const container = document.getElementById("sesion-container");
     if (!sesionActiva) {
       container.innerHTML = `
         <div class="no-sesion">
           <p>No hay sesión activa</p>
-          <button class="btn-primary" onclick="showTab('hoy')">Ver rutina de hoy</button>
+          <div class="btn-row" style="justify-content:center">
+            <button class="btn-primary" onclick="showTab('hoy')">Ver rutina de hoy</button>
+            <button class="btn-secondary" onclick="abrirModalSesionLibre()">Sesión libre</button>
+          </div>
         </div>`;
       return;
     }
 
-    const opts = ejerciciosCat.map(e => `<option value="${e.id}">${e.nombre}</option>`).join("");
+    const opts = ejerciciosCat.map(e => `<option value="${e.id}" data-tipo="${e.tipo || 'repeticiones'}">${e.nombre}</option>`).join("");
     container.innerHTML = `
       <div class="sesion-panel">
         <div class="sesion-header">
@@ -242,31 +563,37 @@
           <div class="sesion-timer" id="timer">00:00</div>
         </div>
         <div class="sets-list" id="sets-list"></div>
+        <div class="form-group">
+          <label class="form-label">Ejercicio</label>
+          <select class="form-select" id="sel-ejercicio" onchange="actualizarCamposSesion()">${opts}</select>
+        </div>
         <div class="add-set-form">
-          <div>
-            <label class="form-label">Ejercicio</label>
-            <select class="form-select" id="sel-ejercicio">${opts}</select>
-          </div>
           <div>
             <label class="form-label">Serie</label>
             <input class="form-input" id="inp-serie" type="number" min="1" value="1">
           </div>
-          <div>
+          <div id="campo-reps">
             <label class="form-label">Reps</label>
             <input class="form-input" id="inp-reps" type="number" min="1" value="10">
           </div>
-          <div>
+          <div id="campo-tiempo" class="hidden">
+            <label class="form-label">Segundos</label>
+            <input class="form-input" id="inp-tiempo" type="number" min="1" value="30">
+          </div>
+          <div id="campo-peso">
             <label class="form-label">Peso (kg)</label>
             <input class="form-input" id="inp-peso" type="number" min="0" placeholder="—">
           </div>
         </div>
-        <div style="margin-bottom:8px">
+        <div class="form-group">
           <label class="form-label">Equipo</label>
           <select class="form-select" id="sel-equipo">
             <option value="Peso corporal">Peso corporal</option>
             <option value="Mancuernas">Mancuernas</option>
             <option value="Barra">Barra</option>
             <option value="Maquina">Máquina</option>
+            <option value="Bandas">Bandas</option>
+            <option value="Kettlebell">Kettlebell</option>
           </select>
         </div>
         <div class="btn-row" style="margin-top:16px">
@@ -275,7 +602,19 @@
         </div>
       </div>`;
 
+    actualizarCamposSesion();
     cargarSets();
+  }
+
+  function actualizarCamposSesion() {
+    const sel = document.getElementById("sel-ejercicio");
+    if (!sel) return;
+    const opt = sel.options[sel.selectedIndex];
+    const tipo = opt ? opt.dataset.tipo : 'repeticiones';
+    const esTiempo = tipo === 'tiempo';
+    document.getElementById("campo-reps").classList.toggle("hidden", esTiempo);
+    document.getElementById("campo-tiempo").classList.toggle("hidden", !esTiempo);
+    document.getElementById("campo-peso").classList.toggle("hidden", tipo === 'peso_corporal' || tipo === 'tiempo');
   }
 
   async function cargarSets() {
@@ -287,28 +626,42 @@
       list.innerHTML = '<div style="color:var(--text-dim);font-size:14px;margin-bottom:16px">Sin sets registrados aún</div>';
       return;
     }
-    list.innerHTML = sets.map((s, i) => `
-      <div class="set-row">
-        <div class="set-num">${i+1}</div>
-        <div class="set-ejercicio">${s.nombre}</div>
-        <div class="set-detalle">${s.serie_num}ª serie · ${s.reps} reps ${s.peso_kg ? "· " + s.peso_kg + "kg" : ""} · ${s.equipo}</div>
-      </div>`).join("");
+    list.innerHTML = sets.map((s, i) => {
+      let detalle = `${s.serie_num}ª serie · `;
+      if (s.duracion_seg) {
+        detalle += `${s.duracion_seg}s`;
+      } else {
+        detalle += `${s.reps} reps`;
+      }
+      if (s.peso_kg) detalle += ` · ${s.peso_kg}kg`;
+      if (s.equipo) detalle += ` · ${s.equipo}`;
+      return `
+        <div class="set-row">
+          <div class="set-num">${i+1}</div>
+          <div class="set-ejercicio">${s.nombre}</div>
+          <div class="set-detalle">${detalle}</div>
+        </div>`;
+    }).join("");
   }
 
   async function addSet() {
-    const ejercicio_id = parseInt(document.getElementById("sel-ejercicio").value);
+    const sel = document.getElementById("sel-ejercicio");
+    const ejercicio_id = parseInt(sel.value);
+    const opt = sel.options[sel.selectedIndex];
+    const tipo = opt ? opt.dataset.tipo : 'repeticiones';
     const serie_num = parseInt(document.getElementById("inp-serie").value);
-    const reps = parseInt(document.getElementById("inp-reps").value);
-    const peso = parseFloat(document.getElementById("inp-peso").value) || null;
+    const esTiempo = tipo === 'tiempo';
+    const reps = esTiempo ? null : parseInt(document.getElementById("inp-reps").value);
+    const duracion_seg = esTiempo ? parseInt(document.getElementById("inp-tiempo").value) : null;
+    const peso = tipo === 'peso_corporal' || esTiempo ? null : parseFloat(document.getElementById("inp-peso").value) || null;
     const equipo = document.getElementById("sel-equipo").value;
 
     await fetch(`/api/ejercicios/sesiones/${sesionActiva}/sets`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ejercicio_id, serie_num, reps, peso_kg: peso, equipo })
+      body: JSON.stringify({ ejercicio_id, serie_num, reps, peso_kg: peso, equipo, duracion_seg })
     });
 
-    // XP por set
     await fetch("/api/usuario/xp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -326,7 +679,6 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ duracion_min: duracion })
     });
-    // XP por sesión completa
     await fetch("/api/usuario/xp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -354,9 +706,19 @@
       </div>`).join("");
   }
 
+  async function cargarEjercicios() {
+    const res = await fetch("/api/ejercicios/catalogo");
+    ejerciciosCat = await res.json();
+  }
+
   // Inicializar
-  cargarEjercicios();
-  cargarRutinaHoy();
+  async function init() {
+    await cargarEjercicios();
+    await cargarRutinas();
+    cargarRutinaHoy();
+  }
+
+  init();
 </script>
 <script>
   if ("serviceWorker" in navigator) {

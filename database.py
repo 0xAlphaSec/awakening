@@ -105,7 +105,8 @@ def init_db():
             id SERIAL PRIMARY KEY,
             nombre TEXT NOT NULL,
             grupo_muscular TEXT,
-            equipo_default TEXT
+            equipo_default TEXT,
+            tipo TEXT DEFAULT 'repeticiones'
         )
     """)
 
@@ -150,6 +151,7 @@ def init_db():
             reps INTEGER,
             peso_kg REAL,
             equipo TEXT,
+            duracion_seg INTEGER,
             FOREIGN KEY (sesion_id) REFERENCES sesiones(id),
             FOREIGN KEY (ejercicio_id) REFERENCES ejercicios_cat(id)
         )
