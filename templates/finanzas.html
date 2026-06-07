@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Awakening — Finanzas</title>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#080810">
   <style>
     :root {
       --bg: #080810; --bg2: #0d0d1a; --panel: #11111f;
@@ -480,6 +482,11 @@
   }
 
   cargarResumen();
+</script>
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/static/sw.js");
+  }
 </script>
 </body>
 </html>
