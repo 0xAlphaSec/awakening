@@ -93,6 +93,30 @@ def add_ejercicio():
     conn.close()
     return jsonify({"mensaje": "Ejercicio añadido.", "id": ejercicio_id}), 201
 
+@ejercicios_bp.route("/sesiones/<int:sesion_id>/sets", methods=["POST"])
+def add_set(sesion_id):
+    data = request.get_json()
+    conn = get_connection()
+    cur = get_cursor(conn)
+    cur.execute(
+        """INSERT INTO sesion_sets
+           (sesion_id, ejercicio_id, serie_num, reps, peso_kg, equipo, duracion_seg)
+           VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+        (
+            sesion_id,
+            data["ejercicio_id"],
+            data["serie_num"],
+            data.get("reps"),
+            data.get("peso_kg"),
+            data.get("equipo"),
+            data.get("duracion_seg")
+        )
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({"mensaje": "Set registrado."}), 201
+
 @ejercicios_bp.route("/sesiones/<int:sesion_id>/sets", methods=["GET"])
 def get_sets(sesion_id):
     sets = Sesion.obtener_sets(sesion_id)
