@@ -48,7 +48,7 @@ def add_ejercicio_rutina(rutina_id):
         data.get("series"),
         data.get("reps_objetivo")
     )
-    return jsonify({"mensaje": "Ejercicio añadido a la rutina."}), 
+    return jsonify({"mensaje": "Ejercicio añadido a la rutina."}), 201 
 
 @ejercicios_bp.route("/rutinas/<int:rutina_id>/ejercicios", methods=["GET"])
 def get_ejercicios_rutina(rutina_id):
@@ -82,12 +82,14 @@ def iniciar_sesion():
 def add_ejercicio():
     data = request.get_json()
     conn = get_connection()
-    cursor = conn.execute(
-        "INSERT INTO ejercicios_cat (nombre, grupo_muscular, equipo_default) VALUES (?, ?, ?)",
-        (data["nombre"], data.get("grupo_muscular"), data.get("equipo_default"))
+    cur = get_cursor(conn)
+    cur.execute(
+        "INSERT INTO ejercicios_cat (nombre, grupo_muscular, equipo_default, tipo) VALUES (%s, %s, %s, %s) RETURNING id",
+        (data["nombre"], data.get("grupo_muscular"), data.get("equipo_default"), data.get("tipo", "repeticiones"))
     )
-    ejercicio_id = cursor.lastrowid
+    ejercicio_id = cur.fetchone()["id"]
     conn.commit()
+    cur.close()
     conn.close()
     return jsonify({"mensaje": "Ejercicio añadido.", "id": ejercicio_id}), 201
 
