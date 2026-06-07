@@ -88,7 +88,7 @@ class Rutina:
         conn = get_connection()
         cur = get_cursor(conn)
         cur.execute(
-            """SELECT re.*, ec.nombre, ec.grupo_muscular, ec.equipo_default
+            """SELECT re.*, ec.nombre, ec.grupo_muscular, ec.equipo_default, ec.tipo
                FROM rutina_ejercicios re
                JOIN ejercicios_cat ec ON re.ejercicio_id = ec.id
                WHERE re.rutina_id = %s""",
