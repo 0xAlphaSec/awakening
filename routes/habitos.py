@@ -83,6 +83,8 @@ def edit_habito(habito_id):
 def delete_habito(habito_id):
     conn = get_connection()
     cur = get_cursor(conn)
+    cur.execute("DELETE FROM habitos_registro WHERE habito_id = %s", (habito_id,))
+    cur.execute("DELETE FROM castigos_activos WHERE castigo_id = %s", (habito_id,))
     cur.execute("DELETE FROM habitos_cat WHERE id = %s", (habito_id,))
     conn.commit()
     cur.close()

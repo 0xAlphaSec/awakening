@@ -398,6 +398,28 @@
       from { opacity: 0; transform: translateY(20px); }
       to   { opacity: 1; transform: translateY(0); }
     }
+
+    .btn-delete {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      opacity: 0;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .habito-row:hover .btn-delete {
+      opacity: 1;
+    }
+
+    .btn-delete:hover {
+      color: var(--danger);
+      background: rgba(239,68,68,0.1);
+    }
   </style>
 </head>
 <body>
@@ -532,9 +554,14 @@
           </div>
           ${extra}
           <div class="habito-stat">${h.stat_asociado}</div>
+          <button class="btn-delete" onclick="eliminarHabito(event, ${h.id})">✕</button>
         `;
 
-        row.addEventListener("click", () => toggleHabito(h.id, h.tipo));
+        row.addEventListener("click", (e) => {
+          if (e.target.closest(".btn-delete")) return;
+          toggleHabito(h.id, h.tipo);
+        });
+
         list.appendChild(row);
       });
 
@@ -614,6 +641,14 @@
     }
 
     cargarHabitos();
+    
+    async function eliminarHabito(event, id) {
+      event.stopPropagation();
+      event.preventDefault();
+      if (!confirm("¿Eliminar este hábito?")) return;
+      await fetch(`/api/habitos/${id}`, { method: "DELETE" });
+      await cargarHabitos();
+    }
   </script>
 </body>
 </html>
