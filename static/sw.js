@@ -1,4 +1,4 @@
-const CACHE = "awakening-v1";
+const CACHE = "awakening-v2";
 const ASSETS = ["/", "/habitos", "/entrenamiento", "/finanzas"];
 
 self.addEventListener("install", e => {
