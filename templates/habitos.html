@@ -602,10 +602,14 @@
       // Dar XP si se completa
       if (nuevoEstado === 1) {
         const xp = tipo === "minutos" ? (valor || 0) : 20;
+        const resHabito = await fetch("/api/habitos/hoy");
+        const habitos = await resHabito.json();
+        const habito = habitos.find(h => h.id === id);
+        const stat = habito?.stat_asociado || "Disciplina";
         await fetch("/api/usuario/xp", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ stat_tipo: registrosHoy[id]?.stat_asociado || "Disciplina", xp, motivo: "Habito completado" })
+          body: JSON.stringify({ stat_tipo: stat, xp, motivo: "Habito completado" })
         });
       }
 
