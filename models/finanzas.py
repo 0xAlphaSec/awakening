@@ -71,11 +71,10 @@ class Finanzas:
         return disponible
 
     @staticmethod
-    def calcular_distribucion(disponible, porcentajes):
-        return {
-            key: round(disponible * (pct / 100), 2)
-            for key, pct in porcentajes.items()
-        }
+    def calcular_distribucion(disponible, aportaciones):
+        # 'aportaciones' contiene importes fijos en € (no porcentajes).
+        # Se devuelve tal cual; el 'disponible' se usa solo para validar que cuadre.
+        return {key: round(monto, 2) for key, monto in aportaciones.items()}
 
     @staticmethod
     def obtener_historial_sueldos():
@@ -206,48 +205,17 @@ class Finanzas:
         return resumen
 
     # ── GASTOS PERSONALES ─────────────────────────────────
+    # Ahora son libres: nombre + monto, igual que los gastos fijos.
+    # (las categorías predefinidas ya no se usan)
 
     @staticmethod
-    def obtener_categorias_gastos_personales():
-        conn = get_connection()
-        cur = get_cursor(conn)
-        cur.execute("SELECT * FROM gastos_personales_cat ORDER BY es_predefinida DESC, nombre")
-        cats = cur.fetchall()
-        cur.close()
-        conn.close()
-        return cats
-
-    @staticmethod
-    def agregar_categoria_personal(nombre):
+    def agregar_gasto_personal(nombre, monto_estimado):
         conn = get_connection()
         cur = get_cursor(conn)
         cur.execute(
-            "INSERT INTO gastos_personales_cat (nombre, es_predefinida) VALUES (%s, 0)",
-            (nombre,)
+            "INSERT INTO gastos_personales (nombre, monto_estimado) VALUES (%s, %s)",
+            (nombre, monto_estimado)
         )
-        conn.commit()
-        cur.close()
-        conn.close()
-
-    @staticmethod
-    def agregar_gasto_personal(categoria_id, monto_estimado):
-        conn = get_connection()
-        cur = get_cursor(conn)
-        cur.execute(
-            "SELECT id FROM gastos_personales WHERE categoria_id = %s AND activo = 1",
-            (categoria_id,)
-        )
-        existente = cur.fetchone()
-        if existente:
-            cur.execute(
-                "UPDATE gastos_personales SET monto_estimado = %s WHERE id = %s",
-                (monto_estimado, existente["id"])
-            )
-        else:
-            cur.execute(
-                "INSERT INTO gastos_personales (categoria_id, monto_estimado) VALUES (%s, %s)",
-                (categoria_id, monto_estimado)
-            )
         conn.commit()
         cur.close()
         conn.close()
@@ -256,12 +224,7 @@ class Finanzas:
     def obtener_gastos_personales():
         conn = get_connection()
         cur = get_cursor(conn)
-        cur.execute(
-            """SELECT gp.*, gc.nombre
-               FROM gastos_personales gp
-               JOIN gastos_personales_cat gc ON gp.categoria_id = gc.id
-               WHERE gp.activo = 1"""
-        )
+        cur.execute("SELECT * FROM gastos_personales WHERE activo = 1 ORDER BY nombre")
         gastos = cur.fetchall()
         cur.close()
         conn.close()
