@@ -21,10 +21,13 @@ class Finanzas:
     def obtener_gastos_fijos():
         conn = get_connection()
         cur = get_cursor(conn)
-        cur.execute("SELECT * FROM gastos_fijos WHERE activo = 1")
+        cur.execute("SELECT id, concepto, monto, activo FROM gastos_fijos WHERE activo = 1")
         gastos = cur.fetchall()
         cur.close()
         conn.close()
+        # Si viene como tupla, lo transformamos en diccionario manualmente para asegurar compatibilidad
+        if gastos and isinstance(gastos[0], tuple):
+            return [{"id": g[0], "concepto": g[1], "monto": float(g[2])} for g in gastos]
         return gastos
 
     @staticmethod
@@ -32,10 +35,13 @@ class Finanzas:
         conn = get_connection()
         cur = get_cursor(conn)
         cur.execute("SELECT SUM(monto) FROM gastos_fijos WHERE activo = 1")
-        total = cur.fetchone()["sum"]
+        row = cur.fetchone()
         cur.close()
         conn.close()
-        return total or 0.0
+        if not row:
+            return 0.0
+        total = row["sum"] if isinstance(row, dict) else row[0]
+        return float(total) if total is not None else 0.0
 
     @staticmethod
     def eliminar_gasto_fijo(gasto_id):
@@ -80,10 +86,18 @@ class Finanzas:
     def obtener_historial_sueldos():
         conn = get_connection()
         cur = get_cursor(conn)
-        cur.execute("SELECT * FROM finanzas_mes ORDER BY fecha DESC")
+        cur.execute("SELECT id, fecha, sueldo_neto, disponible_real, porcentajes FROM finanzas_mes ORDER BY fecha DESC")
         historial = cur.fetchall()
         cur.close()
         conn.close()
+        if historial and isinstance(historial[0], tuple):
+            return [{
+                "id": h[0], 
+                "fecha": str(h[1]), 
+                "sueldo_neto": float(h[2]), 
+                "disponible_real": float(h[3]), 
+                "porcentajes": h[4]
+            } for h in historial]
         return historial
 
     # ── COLCHÓN ───────────────────────────────────────────
@@ -224,23 +238,26 @@ class Finanzas:
     def obtener_gastos_personales():
         conn = get_connection()
         cur = get_cursor(conn)
-        cur.execute("SELECT * FROM gastos_personales WHERE activo = 1 ORDER BY nombre")
+        cur.execute("SELECT id, nombre, monto_estimado, activo FROM gastos_personales WHERE activo = 1 ORDER BY nombre")
         gastos = cur.fetchall()
         cur.close()
         conn.close()
+        if gastos and isinstance(gastos[0], tuple):
+            return [{"id": g[0], "nombre": g[1], "monto_estimado": float(g[2])} for g in gastos]
         return gastos
 
     @staticmethod
     def total_gastos_personales():
         conn = get_connection()
         cur = get_cursor(conn)
-        cur.execute(
-            "SELECT SUM(monto_estimado) FROM gastos_personales WHERE activo = 1"
-        )
-        total = cur.fetchone()["sum"]
+        cur.execute("SELECT SUM(monto_estimado) FROM gastos_personales WHERE activo = 1")
+        row = cur.fetchone()
         cur.close()
         conn.close()
-        return total or 0.0
+        if not row:
+            return 0.0
+        total = row["sum"] if isinstance(row, dict) else row[0]
+        return float(total) if total is not None else 0.0
 
     @staticmethod
     def eliminar_gasto_personal(gasto_id):
