@@ -1,15 +1,65 @@
 import os
 import psycopg2
 import psycopg2.extras
+import psycopg2.pool
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
+# Pool de conexiones reutilizables. minconn=1 mantiene siempre 1 conexion
+# abierta lista para usar; maxconn=10 limita el numero maximo simultaneo
+# (suficiente para un solo worker gunicorn con trafico personal).
+_pool = psycopg2.pool.ThreadedConnectionPool(
+    minconn=1,
+    maxconn=10,
+    dsn=DATABASE_URL
+)
+
+
+class _PooledConnection:
+    """
+    Envoltorio fino sobre una conexion psycopg2 obtenida del pool.
+
+    Todo el codigo existente llama a conn.close() al terminar, igual que
+    haria con una conexion "normal". En vez de cerrar la conexion real
+    (que obligaria a abrir otra desde cero la siguiente vez), close()
+    devuelve la conexion al pool para que se reutilice. El resto de
+    atributos/metodos (cursor, commit, rollback...) se delegan tal cual
+    a la conexion real, asi que no hace falta tocar ningun otro archivo.
+    """
+
+    def __init__(self, real_conn):
+        object.__setattr__(self, "_real_conn", real_conn)
+        object.__setattr__(self, "_released", False)
+
+    def close(self):
+        if not self._released:
+            _pool.putconn(self._real_conn)
+            object.__setattr__(self, "_released", True)
+
+    def __getattr__(self, name):
+        return getattr(self._real_conn, name)
+
+    def __setattr__(self, name, value):
+        setattr(self._real_conn, name, value)
+
+
 def get_connection():
-    conn = psycopg2.connect(DATABASE_URL)
-    return conn
+    real_conn = _pool.getconn()
+    # Si una conexion quedo en mal estado (p.ej. tras un error sin rollback)
+    # la descartamos y pedimos una nueva en vez de propagar el problema.
+    if real_conn.closed:
+        _pool.putconn(real_conn, close=True)
+        real_conn = _pool.getconn()
+    return _PooledConnection(real_conn)
+
 
 def get_cursor(conn):
     return conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+
+def close_pool():
+    """Util para tests o cierre limpio de la app."""
+    _pool.closeall()
 
 def init_db():
     conn = get_connection()
