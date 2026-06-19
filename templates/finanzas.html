@@ -80,11 +80,11 @@
     .tx-amount.ingreso { color: var(--success); }
     .tx-amount.gasto { color: var(--danger); }
 
-    /* Porcentajes */
+    /* Bolsillos (importes fijos en €) */
     .pct-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
     .pct-item { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
     .pct-label { font-size: 13px; color: var(--text-dim); letter-spacing: 1px; }
-    .pct-input { background: transparent; border: none; color: var(--accent); font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; width: 60px; text-align: right; }
+    .pct-input { background: transparent; border: none; color: var(--accent); font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; width: 80px; text-align: right; }
     .pct-input:focus { outline: none; }
     .pct-sym { color: var(--text-dim); font-size: 16px; }
 
@@ -170,8 +170,8 @@
     <div class="form-panel" style="margin-top:8px">
       <div class="form-grid">
         <div class="form-group">
-          <label class="form-label">Categoría</label>
-          <select class="form-select" id="sel-cat-personal"></select>
+          <label class="form-label">Nombre</label>
+          <input class="form-input" id="inp-personal-nombre" type="text" placeholder="Gimnasio">
         </div>
         <div class="form-group">
           <label class="form-label">Monto estimado (€)</label>
@@ -246,7 +246,7 @@ async function cargarTabSueldo() {
         ${Object.entries(porcentajes).map(([k, v]) => `
           <div class="list-item" style="margin-bottom:6px">
             <div class="list-item-name">${k}</div>
-            <div class="list-item-amount">${(libre * v / 100).toFixed(0)} €</div>
+            <div class="list-item-amount">${Number(v).toFixed(2)} €</div>
           </div>`).join("")}
         <div style="text-align:center;margin-top:24px;color:var(--text-dim);font-size:13px;letter-spacing:2px">
           Próximo registro disponible el ${proximoMes}
@@ -276,31 +276,38 @@ async function cargarTabSueldo() {
           <div class="list-item-name" style="color:var(--accent)">Dinero libre</div>
           <div class="list-item-amount" style="color:var(--accent)" id="preview-libre">— €</div>
         </div>
-        <div class="section-title">Distribución del dinero libre (%)</div>
+        <div class="section-title">Distribución del dinero libre (importes fijos en €)</div>
         <div class="pct-grid">
           <div class="pct-item">
             <span class="pct-label">Colchón / Ahorro</span>
             <div style="display:flex;align-items:center;gap:4px">
-              <input class="pct-input" id="pct-colchon" type="number" value="50" oninput="actualizarPreview()">
-              <span class="pct-sym">%</span>
+              <span class="pct-sym">€</span>
+              <input class="pct-input" id="eur-colchon" type="number" value="446.05" oninput="actualizarPreview()">
             </div>
           </div>
           <div class="pct-item">
-            <span class="pct-label">ETF Global</span>
+            <span class="pct-label">Certificaciones</span>
             <div style="display:flex;align-items:center;gap:4px">
-              <input class="pct-input" id="pct-etf" type="number" value="35" oninput="actualizarPreview()">
-              <span class="pct-sym">%</span>
+              <span class="pct-sym">€</span>
+              <input class="pct-input" id="eur-certificaciones" type="number" value="110" oninput="actualizarPreview()">
             </div>
           </div>
           <div class="pct-item">
             <span class="pct-label">Imprevistos</span>
             <div style="display:flex;align-items:center;gap:4px">
-              <input class="pct-input" id="pct-imprevistos" type="number" value="15" oninput="actualizarPreview()">
-              <span class="pct-sym">%</span>
+              <span class="pct-sym">€</span>
+              <input class="pct-input" id="eur-imprevistos" type="number" value="100" oninput="actualizarPreview()">
+            </div>
+          </div>
+          <div class="pct-item">
+            <span class="pct-label">ETF Global</span>
+            <div style="display:flex;align-items:center;gap:4px">
+              <span class="pct-sym">€</span>
+              <input class="pct-input" id="eur-etf" type="number" value="100" oninput="actualizarPreview()">
             </div>
           </div>
         </div>
-        <div id="pct-warning" style="color:var(--danger);font-size:13px;margin-top:8px;display:none">Los porcentajes deben sumar 100%</div>
+        <div id="pct-warning" style="color:var(--danger);font-size:13px;margin-top:8px;display:none">Los importes deben sumar el dinero libre</div>
         <div id="distribucion-preview" style="margin-top:16px"></div>
         <button class="btn-primary" id="btn-registrar" style="margin-top:16px;width:100%;opacity:0.5" disabled onclick="registrarSueldo()">Registrar sueldo</button>
       </div>
@@ -318,17 +325,19 @@ function actualizarPreview() {
   const previewLibre = document.getElementById("preview-libre");
   if (previewLibre) previewLibre.textContent = libre > 0 ? `${libre.toFixed(0)} €` : "— €";
 
-  const colchon = parseFloat(document.getElementById("pct-colchon")?.value) || 0;
-  const etf = parseFloat(document.getElementById("pct-etf")?.value) || 0;
-  const imprevistos = parseFloat(document.getElementById("pct-imprevistos")?.value) || 0;
-  const suma = colchon + etf + imprevistos;
+  const colchon = parseFloat(document.getElementById("eur-colchon")?.value) || 0;
+  const certificaciones = parseFloat(document.getElementById("eur-certificaciones")?.value) || 0;
+  const imprevistos = parseFloat(document.getElementById("eur-imprevistos")?.value) || 0;
+  const etf = parseFloat(document.getElementById("eur-etf")?.value) || 0;
+  const suma = colchon + certificaciones + imprevistos + etf;
 
   const warning = document.getElementById("pct-warning");
   const btn = document.getElementById("btn-registrar");
   const preview = document.getElementById("distribucion-preview");
 
-  if (suma !== 100) {
+  if (Math.round(suma * 100) !== Math.round(libre * 100)) {
     warning.style.display = "block";
+    warning.textContent = `Los importes suman ${suma.toFixed(2)} € pero el dinero libre es ${libre.toFixed(2)} €`;
     btn.disabled = true;
     btn.style.opacity = "0.5";
     preview.innerHTML = "";
@@ -341,18 +350,22 @@ function actualizarPreview() {
 
   if (libre > 0) {
     preview.innerHTML = `
-      <div class="section-title">Distribución calculada</div>
+      <div class="section-title">Distribución</div>
       <div class="list-item" style="margin-bottom:6px">
         <div class="list-item-name">Colchón / Ahorro</div>
-        <div class="list-item-amount">${(libre * colchon / 100).toFixed(0)} €</div>
+        <div class="list-item-amount">${colchon.toFixed(2)} €</div>
       </div>
       <div class="list-item" style="margin-bottom:6px">
-        <div class="list-item-name">ETF Global</div>
-        <div class="list-item-amount">${(libre * etf / 100).toFixed(0)} €</div>
+        <div class="list-item-name">Certificaciones</div>
+        <div class="list-item-amount">${certificaciones.toFixed(2)} €</div>
+      </div>
+      <div class="list-item" style="margin-bottom:6px">
+        <div class="list-item-name">Imprevistos</div>
+        <div class="list-item-amount">${imprevistos.toFixed(2)} €</div>
       </div>
       <div class="list-item">
-        <div class="list-item-name">Imprevistos</div>
-        <div class="list-item-amount">${(libre * imprevistos / 100).toFixed(0)} €</div>
+        <div class="list-item-name">ETF Global</div>
+        <div class="list-item-amount">${etf.toFixed(2)} €</div>
       </div>`;
   }
 }
@@ -360,20 +373,21 @@ function actualizarPreview() {
 async function registrarSueldo() {
   const sueldo = parseFloat(document.getElementById("inp-sueldo").value);
   const libre = sueldo - totalDescuentosGlobal;
-  const porcentajes = {
-    colchon: parseFloat(document.getElementById("pct-colchon").value),
-    etf: parseFloat(document.getElementById("pct-etf").value),
-    imprevistos: parseFloat(document.getElementById("pct-imprevistos").value),
+  const aportaciones = {
+    colchon: parseFloat(document.getElementById("eur-colchon").value),
+    certificaciones: parseFloat(document.getElementById("eur-certificaciones").value),
+    imprevistos: parseFloat(document.getElementById("eur-imprevistos").value),
+    etf: parseFloat(document.getElementById("eur-etf").value),
   };
 
   await fetch("/api/finanzas/sueldo", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sueldo_neto: sueldo, porcentajes, disponible_real: libre })
+    body: JSON.stringify({ sueldo_neto: sueldo, porcentajes: aportaciones, disponible_real: libre })
   });
 
-  const etfMonto = libre * porcentajes.etf / 100;
-  const colchonMonto = libre * porcentajes.colchon / 100;
+  const etfMonto = aportaciones.etf;
+  const colchonMonto = aportaciones.colchon;
 
   if (etfMonto > 0) {
     await fetch("/api/finanzas/etf", {
@@ -389,10 +403,13 @@ async function registrarSueldo() {
     const gastosFijosRes = await fetch("/api/finanzas/gastos-fijos");
     const gastosFijos = await gastosFijosRes.json();
     const totalFijos = gastosFijos.reduce((acc, g) => acc + g.monto, 0);
+    const gastosPersonalesRes = await fetch("/api/finanzas/gastos-personales");
+    const gastosPersonales = await gastosPersonalesRes.json();
+    const totalPersonales = gastosPersonales.reduce((acc, g) => acc + g.monto_estimado, 0);
     await fetch("/api/finanzas/colchon/inicializar", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ gastos_esenciales_mes: totalFijos })
+      body: JSON.stringify({ gastos_esenciales_mes: totalFijos + totalPersonales })
     });
   }
   await fetch("/api/finanzas/colchon/actualizar", {
