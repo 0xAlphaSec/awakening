@@ -562,6 +562,13 @@
     showTab("sesion");
   }
 
+  // tarjetasSesion: array de { ejercicio_id, nombre, tipo, sets: [...] }
+  // Se reconstruye cada vez que se cargan los sets, agrupando por ejercicio.
+  let tarjetasSesion = [];
+  // ids de ejercicios añadidos a la sesión pero sin ningun set aun
+  // (para que la tarjeta aparezca vacia lista para rellenar)
+  let ejerciciosVaciosSesion = [];
+
   function renderSesion() {
     const container = document.getElementById("sesion-container");
     if (!sesionActiva) {
@@ -576,117 +583,166 @@
       return;
     }
 
-    const opts = ejerciciosCat.map(e => `<option value="${e.id}" data-tipo="${e.tipo || 'peso'}">${e.nombre}</option>`).join("");
     container.innerHTML = `
       <div class="sesion-panel">
         <div class="sesion-header">
           <div class="sesion-title">Sesión activa</div>
           <div class="sesion-timer" id="timer">00:00</div>
         </div>
-        <div class="sets-list" id="sets-list"></div>
-        <div class="form-group">
-          <label class="form-label">Ejercicio</label>
-          <select class="form-select" id="sel-ejercicio" onchange="actualizarCamposSesion()">${opts}</select>
-        </div>
-        <div class="add-set-form">
-          <div>
-            <label class="form-label">Serie</label>
-            <input class="form-input" id="inp-serie" type="number" min="1" value="1">
-          </div>
-          <div id="campo-reps">
-            <label class="form-label">Reps</label>
-            <input class="form-input" id="inp-reps" type="number" min="1" value="10">
-          </div>
-          <div id="campo-tiempo" class="hidden">
-            <label class="form-label">Segundos</label>
-            <input class="form-input" id="inp-tiempo" type="number" min="1" value="30">
-          </div>
-          <div id="campo-peso" class="hidden">
-            <label class="form-label">Peso (kg)</label>
-            <input class="form-input" id="inp-peso" type="number" min="0" placeholder="—">
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Equipo</label>
-          <select class="form-select" id="sel-equipo" onchange="togglePesoSesion(this)">
-            <option value="Peso corporal">Peso corporal</option>
-            <option value="Mancuernas">Mancuernas</option>
-            <option value="Barra">Barra</option>
-            <option value="Maquina">Máquina</option>
-            <option value="Bandas">Bandas</option>
-          </select>
-        </div>
+        <div id="tarjetas-ejercicios"></div>
+        <button class="btn-add" onclick="abrirSelectorEjercicioSesion()">+ Añadir ejercicio</button>
         <div class="btn-row" style="margin-top:16px">
-          <button class="btn-primary" onclick="addSet()">+ Añadir set</button>
           <button class="btn-danger" onclick="cerrarSesion()">Cerrar sesión</button>
         </div>
       </div>`;
 
-    actualizarCamposSesion();
     cargarSets();
   }
 
-  function togglePesoSesion(sel) {
-    const sinPeso = sel.value === "Peso corporal" || sel.value === "";
-    document.getElementById("campo-peso").classList.toggle("hidden", sinPeso);
+  function abrirSelectorEjercicioSesion() {
+    const yaAnadidos = new Set(tarjetasSesion.map(t => t.ejercicio_id));
+    const disponibles = ejerciciosCat.filter(e => !yaAnadidos.has(e.id));
+    if (disponibles.length === 0) {
+      alert("Ya has añadido todos los ejercicios del catálogo a esta sesión.");
+      return;
+    }
+    const nombre = prompt(
+      "Ejercicio a añadir:\n" + disponibles.map(e => e.nombre).join(", ")
+    );
+    if (!nombre) return;
+    const ej = disponibles.find(e => e.nombre.toLowerCase() === nombre.trim().toLowerCase());
+    if (!ej) {
+      alert("No se ha encontrado ese ejercicio exacto en el catálogo.");
+      return;
+    }
+    if (!ejerciciosVaciosSesion.includes(ej.id)) ejerciciosVaciosSesion.push(ej.id);
+    renderTarjetasEjercicios();
   }
 
-  function actualizarCamposSesion() {
-    const sel = document.getElementById("sel-ejercicio");
-    if (!sel) return;
-    const opt = sel.options[sel.selectedIndex];
-    const tipo = opt ? opt.dataset.tipo : 'peso';
-    const esTiempo = tipo === 'tiempo';
-    document.getElementById("campo-reps").classList.toggle("hidden", esTiempo);
-    document.getElementById("campo-tiempo").classList.toggle("hidden", !esTiempo);
-    // El peso lo controla togglePesoSesion, no el tipo
-    document.getElementById("campo-peso").classList.toggle("hidden", esTiempo);
-}
+  function togglePesoSesion(sel, ejercicioId) {
+    const sinPeso = sel.value === "Peso corporal" || sel.value === "";
+    const campo = document.getElementById(`campo-peso-${ejercicioId}`);
+    if (campo) campo.classList.toggle("hidden", sinPeso);
+  }
 
   async function cargarSets() {
     const res = await fetch(`/api/ejercicios/sesiones/${sesionActiva}/sets`);
     const sets = await res.json();
-    const list = document.getElementById("sets-list");
-    if (!list) return;
-    if (sets.length === 0) {
-      list.innerHTML = '<div style="color:var(--text-dim);font-size:14px;margin-bottom:16px">Sin sets registrados aún</div>';
+
+    // Agrupamos los sets ya guardados por ejercicio, conservando el orden
+    // en que aparecieron por primera vez en la sesión.
+    const porEjercicio = new Map();
+    sets.forEach(s => {
+      if (!porEjercicio.has(s.ejercicio_id)) {
+        const cat = ejerciciosCat.find(e => e.id === s.ejercicio_id);
+        porEjercicio.set(s.ejercicio_id, {
+          ejercicio_id: s.ejercicio_id,
+          nombre: s.nombre,
+          tipo: cat ? cat.tipo : 'repeticiones',
+          sets: []
+        });
+      }
+      porEjercicio.get(s.ejercicio_id).sets.push(s);
+    });
+
+    // Añadimos las tarjetas "vacias" (ejercicios elegidos pero sin sets aun)
+    ejerciciosVaciosSesion.forEach(id => {
+      if (!porEjercicio.has(id)) {
+        const cat = ejerciciosCat.find(e => e.id === id);
+        if (cat) {
+          porEjercicio.set(id, { ejercicio_id: id, nombre: cat.nombre, tipo: cat.tipo, sets: [] });
+        }
+      }
+    });
+
+    tarjetasSesion = [...porEjercicio.values()];
+    renderTarjetasEjercicios();
+  }
+
+  function renderTarjetasEjercicios() {
+    const cont = document.getElementById("tarjetas-ejercicios");
+    if (!cont) return;
+
+    if (tarjetasSesion.length === 0) {
+      cont.innerHTML = '<div style="color:var(--text-dim);font-size:14px;margin-bottom:16px">Aún no has añadido ningún ejercicio a esta sesión.</div>';
       return;
     }
-    list.innerHTML = sets.map((s, i) => {
-      let detalle = `${s.serie_num}ª serie · `;
-      if (s.duracion_seg) {
-        detalle += `${s.duracion_seg}s`;
-      } else {
-        detalle += `${s.reps} reps`;
-      }
-      if (s.peso_kg) detalle += ` · ${s.peso_kg}kg`;
-      if (s.equipo) detalle += ` · ${s.equipo}`;
+
+    cont.innerHTML = tarjetasSesion.map(t => {
+      const esTiempo = t.tipo === 'tiempo';
+      const ultimoSet = t.sets[t.sets.length - 1];
+      const siguienteSerie = t.sets.length + 1;
+      const repsSugeridas = ultimoSet ? (ultimoSet.reps || 10) : 10;
+      const tiempoSugerido = ultimoSet ? (ultimoSet.duracion_seg || 30) : 30;
+      const pesoSugerido = ultimoSet && ultimoSet.peso_kg ? ultimoSet.peso_kg : '';
+      const equipoSugerido = ultimoSet && ultimoSet.equipo ? ultimoSet.equipo : 'Peso corporal';
+      const sinPesoInicial = equipoSugerido === 'Peso corporal';
+
+      const filasSets = t.sets.map((s, i) => {
+        let detalle = s.duracion_seg ? `${s.duracion_seg}s` : `${s.reps} reps`;
+        if (s.peso_kg) detalle += ` · ${s.peso_kg}kg`;
+        if (s.equipo) detalle += ` · ${s.equipo}`;
+        return `
+          <div class="set-row">
+            <div class="set-num">${i + 1}</div>
+            <div class="set-detalle" style="flex:1">${detalle}</div>
+          </div>`;
+      }).join("");
+
       return `
-        <div class="set-row">
-          <div class="set-num">${i+1}</div>
-          <div class="set-ejercicio">${s.nombre}</div>
-          <div class="set-detalle">${detalle}</div>
+        <div class="dia-card" style="margin-bottom:12px">
+          <div class="dia-header" style="margin-bottom:12px">
+            <div class="dia-nombre" style="font-size:16px">${t.nombre}</div>
+          </div>
+          <div class="sets-list">${filasSets || '<div style="color:var(--text-dim);font-size:13px;margin-bottom:8px">Sin series aún</div>'}</div>
+          <div class="add-set-form">
+            <div>
+              <label class="form-label">Serie</label>
+              <input class="form-input" id="serie-${t.ejercicio_id}" type="number" min="1" value="${siguienteSerie}">
+            </div>
+            <div id="campo-reps-${t.ejercicio_id}" class="${esTiempo ? 'hidden' : ''}">
+              <label class="form-label">Reps</label>
+              <input class="form-input" id="reps-${t.ejercicio_id}" type="number" min="1" value="${repsSugeridas}">
+            </div>
+            <div id="campo-tiempo-${t.ejercicio_id}" class="${esTiempo ? '' : 'hidden'}">
+              <label class="form-label">Segundos</label>
+              <input class="form-input" id="tiempo-${t.ejercicio_id}" type="number" min="1" value="${tiempoSugerido}">
+            </div>
+            <div id="campo-peso-${t.ejercicio_id}" class="${(esTiempo || sinPesoInicial) ? 'hidden' : ''}">
+              <label class="form-label">Peso (kg)</label>
+              <input class="form-input" id="peso-${t.ejercicio_id}" type="number" min="0" value="${pesoSugerido}">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Equipo</label>
+            <select class="form-select" id="equipo-${t.ejercicio_id}" onchange="togglePesoSesion(this, ${t.ejercicio_id})">
+              ${["Peso corporal","Mancuernas","Barra","Maquina","Bandas"].map(eq =>
+                `<option value="${eq}" ${eq === equipoSugerido ? 'selected' : ''}>${eq === 'Maquina' ? 'Máquina' : eq}</option>`
+              ).join("")}
+            </select>
+          </div>
+          <button class="btn-primary" style="width:100%;margin-top:8px" onclick="addSet(${t.ejercicio_id})">+ Añadir serie</button>
         </div>`;
     }).join("");
   }
 
-  async function addSet() {
-    const sel = document.getElementById("sel-ejercicio");
-    const ejercicio_id = parseInt(sel.value);
-    const opt = sel.options[sel.selectedIndex];
-    const tipo = opt ? opt.dataset.tipo : 'peso';
-    const serie_num = parseInt(document.getElementById("inp-serie").value);
-    const esTiempo = tipo === 'tiempo';
-    const reps = esTiempo ? null : parseInt(document.getElementById("inp-reps").value);
-    const duracion_seg = esTiempo ? parseInt(document.getElementById("inp-tiempo").value) : null;
-    const equipoVal = document.getElementById("sel-equipo").value;
-    const peso = (esTiempo || equipoVal === "Peso corporal") ? null : parseFloat(document.getElementById("inp-peso").value) || null;
-    const equipo = document.getElementById("sel-equipo").value;
+  async function addSet(ejercicioId) {
+    const btn = event.target;
+    btn.disabled = true;
+
+    const tarjeta = tarjetasSesion.find(t => t.ejercicio_id === ejercicioId);
+    const esTiempo = tarjeta.tipo === 'tiempo';
+    const serie_num = parseInt(document.getElementById(`serie-${ejercicioId}`).value);
+    const reps = esTiempo ? null : parseInt(document.getElementById(`reps-${ejercicioId}`).value);
+    const duracion_seg = esTiempo ? parseInt(document.getElementById(`tiempo-${ejercicioId}`).value) : null;
+    const equipo = document.getElementById(`equipo-${ejercicioId}`).value;
+    const pesoInput = document.getElementById(`peso-${ejercicioId}`);
+    const peso = (esTiempo || equipo === "Peso corporal") ? null : (parseFloat(pesoInput.value) || null);
 
     await fetch(`/api/ejercicios/sesiones/${sesionActiva}/sets`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ejercicio_id, serie_num, reps, peso_kg: peso, equipo, duracion_seg })
+      body: JSON.stringify({ ejercicio_id: ejercicioId, serie_num, reps, peso_kg: peso, equipo, duracion_seg })
     });
 
     await fetch("/api/usuario/xp", {
@@ -695,7 +751,7 @@
       body: JSON.stringify({ stat_tipo: "Fuerza", xp: 10, motivo: "Set completado" })
     });
 
-    cargarSets();
+    await cargarSets();
   }
 
   async function cerrarSesion() {
