@@ -106,17 +106,6 @@ def registrar_etf():
 
 # ── GASTOS PERSONALES ─────────────────────────────────────
 
-@finanzas_bp.route("/gastos-personales/categorias", methods=["GET"])
-def get_categorias_personales():
-    cats = Finanzas.obtener_categorias_gastos_personales()
-    return jsonify([dict(c) for c in cats])
-
-@finanzas_bp.route("/gastos-personales/categorias", methods=["POST"])
-def add_categoria_personal():
-    data = request.get_json()
-    Finanzas.agregar_categoria_personal(data["nombre"])
-    return jsonify({"mensaje": "Categoria añadida."}), 201
-
 @finanzas_bp.route("/gastos-personales", methods=["GET"])
 def get_gastos_personales():
     gastos = Finanzas.obtener_gastos_personales()
@@ -125,7 +114,7 @@ def get_gastos_personales():
 @finanzas_bp.route("/gastos-personales", methods=["POST"])
 def add_gasto_personal():
     data = request.get_json()
-    Finanzas.agregar_gasto_personal(data["categoria_id"], data["monto_estimado"])
+    Finanzas.agregar_gasto_personal(data["nombre"], data["monto_estimado"])
     return jsonify({"mensaje": "Gasto personal añadido."}), 201
 
 @finanzas_bp.route("/gastos-personales/<int:gasto_id>", methods=["DELETE"])
