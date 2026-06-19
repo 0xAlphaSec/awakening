@@ -187,390 +187,303 @@
 </div>
 
 <script>
+  // Cambiar entre pestañas
   function showTab(tab) {
-    ["resumen","sueldo","gastos"].forEach(t => {
+    ["resumen", "sueldo", "gastos"].forEach(t => {
       document.getElementById(`tab-${t}`).classList.add("hidden");
     });
     document.getElementById(`tab-${tab}`).classList.remove("hidden");
+    
     document.querySelectorAll(".tab").forEach((el, i) => {
-      el.classList.toggle("active", ["resumen","sueldo","gastos"][i] === tab);
+      const tabNames = ["resumen", "sueldo", "gastos"];
+      el.classList.toggle("active", tabNames[i] === tab);
     });
+    
     if (tab === "resumen") cargarResumen();
     if (tab === "gastos") cargarGastos();
     if (tab === "sueldo") cargarTabSueldo();
   }
 
-let totalDescuentosGlobal = 0;
+  let totalDescuentosGlobal = 0;
 
-async function cargarTabSueldo() {
-  const container = document.getElementById("sueldo-container");
-  const [sueldos, fijos, personales] = await Promise.all([
-    fetch("/api/finanzas/sueldo").then(r => r.json()),
-    fetch("/api/finanzas/gastos-fijos").then(r => r.json()),
-    fetch("/api/finanzas/gastos-personales").then(r => r.json())
-  ]);
+  // Cargar pestaña de Sueldo
+  async function cargarTabSueldo() {
+    const container = document.getElementById("sueldo-container");
+    try {
+      const [sueldos, fijos, personales] = await Promise.all([
+        fetch("/api/finanzas/sueldo").then(r => r.json()),
+        fetch("/api/finanzas/gastos-fijos").then(r => r.json()),
+        fetch("/api/finanzas/gastos-personales").then(r => r.json())
+      ]);
 
-  const mesActual = new Date().toISOString().slice(0, 7);
-  const registroMes = sueldos.find(s => s.fecha.startsWith(mesActual));
-  const totalFijos = fijos.reduce((a, g) => a + g.monto, 0);
-  const totalPersonales = personales.reduce((a, g) => a + g.monto_estimado, 0);
-  totalDescuentosGlobal = totalFijos + totalPersonales;
+      const mesActual = new Date().toISOString().slice(0, 7);
+      const registroMes = sueldos.find(s => s.fecha && s.fecha.startsWith(mesActual));
+      
+      // Asegurar mapeo correcto de propiedades según tu backend
+      const totalFijos = fijos.reduce((a, g) => a + (g.monto || 0), 0);
+      const totalPersonales = personales.reduce((a, g) => a + (g.monto_estimado || 0), 0);
+      totalDescuentosGlobal = totalFijos + totalPersonales;
 
-  if (registroMes) {
-    const porcentajes = JSON.parse(registroMes.porcentajes);
-    const libre = registroMes.disponible_real;
-    const proximoMes = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
-      .toLocaleDateString("es-ES", { day: "numeric", month: "long" });
+      if (registroMes) {
+        const porcentajes = JSON.parse(registroMes.porcentajes);
+        const libre = registroMes.disponible_real;
+        const proximoMes = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
+          .toLocaleDateString("es-ES", { day: "numeric", month: "long" });
 
-    container.innerHTML = `
-      <div class="form-panel">
-        <div style="text-align:center;margin-bottom:24px">
-          <div style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--text-dim);margin-bottom:8px">SUELDO REGISTRADO</div>
-          <div style="font-family:'Cinzel',serif;font-size:40px;font-weight:900;color:var(--accent)">${registroMes.sueldo_neto} €</div>
-          <div style="font-size:13px;color:var(--text-dim);margin-top:4px">${registroMes.fecha}</div>
-        </div>
-        <div class="section-title">Descuentos</div>
-        <div class="list-item" style="margin-bottom:6px">
-          <div class="list-item-name">Gastos fijos</div>
-          <div class="list-item-amount" style="color:var(--danger)">- ${totalFijos} €</div>
-        </div>
-        <div class="list-item" style="margin-bottom:16px">
-          <div class="list-item-name">Gastos personales</div>
-          <div class="list-item-amount" style="color:var(--danger)">- ${totalPersonales} €</div>
-        </div>
-        <div class="list-item" style="border-color:var(--accent);margin-bottom:24px">
-          <div class="list-item-name" style="color:var(--accent)">Dinero libre</div>
-          <div class="list-item-amount" style="color:var(--accent)">${libre} €</div>
-        </div>
-        <div class="section-title">Distribución</div>
-        ${Object.entries(porcentajes).map(([k, v]) => `
-          <div class="list-item" style="margin-bottom:6px">
-            <div class="list-item-name">${k}</div>
-            <div class="list-item-amount">${Number(v).toFixed(2)} €</div>
-          </div>`).join("")}
-        <div style="text-align:center;margin-top:24px;color:var(--text-dim);font-size:13px;letter-spacing:2px">
-          Próximo registro disponible el ${proximoMes}
-        </div>
-      </div>
-      <div class="section-title">Historial</div>
-      <div id="historial-sueldos"></div>`;
-  } else {
-    const mesNombre = new Date().toLocaleDateString("es-ES", { month: "long", year: "numeric" });
-    container.innerHTML = `
-      <div class="section-title">Registrar sueldo de ${mesNombre}</div>
-      <div class="form-panel">
-        <div class="form-group">
-          <label class="form-label">Sueldo neto (€)</label>
-          <input class="form-input" id="inp-sueldo" type="number" placeholder="1450" oninput="actualizarPreview()">
-        </div>
-        <div class="section-title" style="margin-top:0">Descuentos automáticos</div>
-        <div class="list-item" style="margin-bottom:6px;opacity:0.7">
-          <div class="list-item-name">Gastos fijos</div>
-          <div class="list-item-amount" style="color:var(--danger)">- ${totalFijos} €</div>
-        </div>
-        <div class="list-item" style="margin-bottom:16px;opacity:0.7">
-          <div class="list-item-name">Gastos personales estimados</div>
-          <div class="list-item-amount" style="color:var(--danger)">- ${totalPersonales} €</div>
-        </div>
-        <div class="list-item" style="border-color:var(--accent);margin-bottom:24px">
-          <div class="list-item-name" style="color:var(--accent)">Dinero libre</div>
-          <div class="list-item-amount" style="color:var(--accent)" id="preview-libre">— €</div>
-        </div>
-        <div class="section-title">Distribución del dinero libre (importes fijos en €)</div>
-        <div class="pct-grid">
-          <div class="pct-item">
-            <span class="pct-label">Colchón / Ahorro</span>
-            <div style="display:flex;align-items:center;gap:4px">
-              <span class="pct-sym">€</span>
-              <input class="pct-input" id="eur-colchon" type="number" value="446.05" oninput="actualizarPreview()">
+        container.innerHTML = `
+          <div class="form-panel">
+            <div style="text-align:center;margin-bottom:24px">
+              <div style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--text-dim);margin-bottom:8px">SUELDO REGISTRADO</div>
+              <div style="font-family:'Cinzel',serif;font-size:40px;font-weight:900;color:var(--accent)">${registroMes.sueldo_neto} €</div>
+              <div style="font-size:13px;color:var(--text-dim);margin-top:4px">${registroMes.fecha}</div>
+            </div>
+            <div class="section-title">Descuentos</div>
+            <div class="list-item" style="margin-bottom:6px">
+              <div class="list-item-name">Gastos fijos</div>
+              <div class="list-item-amount" style="color:var(--danger)">- ${totalFijos} €</div>
+            </div>
+            <div class="list-item" style="margin-bottom:16px">
+              <div class="list-item-name">Gastos personales</div>
+              <div class="list-item-amount" style="color:var(--danger)">- ${totalPersonales} €</div>
+            </div>
+            <div class="list-item" style="border-color:var(--accent);margin-bottom:24px">
+              <div class="list-item-name" style="color:var(--accent)">Dinero libre</div>
+              <div class="list-item-amount" style="color:var(--accent)">${libre} €</div>
+            </div>
+            <div class="section-title">Distribución</div>
+            ${Object.entries(porcentajes).map(([k, v]) => `
+              <div class="list-item" style="margin-bottom:6px">
+                <div class="list-item-name">${k}</div>
+                <div class="list-item-amount">${Number(v).toFixed(2)} €</div>
+              </div>`).join("")}
+            <div style="text-align:center;margin-top:24px;color:var(--text-dim);font-size:13px;letter-spacing:2px">
+              Próximo registro disponible el ${proximoMes}
             </div>
           </div>
-          <div class="pct-item">
-            <span class="pct-label">Certificaciones</span>
-            <div style="display:flex;align-items:center;gap:4px">
-              <span class="pct-sym">€</span>
-              <input class="pct-input" id="eur-certificaciones" type="number" value="110" oninput="actualizarPreview()">
+          <div class="section-title">Historial</div>
+          <div id="historial-sueldos"></div>`;
+      } else {
+        const mesNombre = new Date().toLocaleDateString("es-ES", { month: "long", year: "numeric" });
+        container.innerHTML = `
+          <div class="section-title">Registrar sueldo de ${mesNombre}</div>
+          <div class="form-panel">
+            <div class="form-group">
+              <label class="form-label">Sueldo neto (€)</label>
+              <input class="form-input" id="inp-sueldo" type="number" placeholder="1450" oninput="actualizarPreview()">
             </div>
-          </div>
-          <div class="pct-item">
-            <span class="pct-label">Imprevistos</span>
-            <div style="display:flex;align-items:center;gap:4px">
-              <span class="pct-sym">€</span>
-              <input class="pct-input" id="eur-imprevistos" type="number" value="100" oninput="actualizarPreview()">
+            <div class="section-title" style="margin-top:0">Descuentos automáticos</div>
+            <div class="list-item" style="margin-bottom:6px;opacity:0.7">
+              <div class="list-item-name">Gastos fijos</div>
+              <div class="list-item-amount" style="color:var(--danger)">- ${totalFijos} €</div>
             </div>
-          </div>
-          <div class="pct-item">
-            <span class="pct-label">ETF Global</span>
-            <div style="display:flex;align-items:center;gap:4px">
-              <span class="pct-sym">€</span>
-              <input class="pct-input" id="eur-etf" type="number" value="100" oninput="actualizarPreview()">
+            <div class="list-item" style="margin-bottom:16px;opacity:0.7">
+              <div class="list-item-name">Gastos personales estimados</div>
+              <div class="list-item-amount" style="color:var(--danger)">- ${totalPersonales} €</div>
             </div>
+            <div class="list-item" style="border-color:var(--accent);margin-bottom:24px">
+              <div class="list-item-name" style="color:var(--accent)">Dinero libre</div>
+              <div class="list-item-amount" style="color:var(--accent)" id="preview-libre">— €</div>
+            </div>
+            <div class="section-title">Distribución del dinero libre (importes fijos en €)</div>
+            <div class="pct-grid">
+              <div class="pct-item">
+                <span class="pct-label">Colchón / Ahorro</span>
+                <div style="display:flex;align-items:center;gap:4px">
+                  <span class="pct-sym">€</span>
+                  <input class="pct-input" id="eur-colchon" type="number" value="446.05" oninput="actualizarPreview()">
+                </div>
+              </div>
+              <div class="pct-item">
+                <span class="pct-label">Certificaciones</span>
+                <div style="display:flex;align-items:center;gap:4px">
+                  <span class="pct-sym">€</span>
+                  <input class="pct-input" id="eur-certificaciones" type="number" value="110" oninput="actualizarPreview()">
+                </div>
+              </div>
+              <div class="pct-item">
+                <span class="pct-label">Imprevistos</span>
+                <div style="display:flex;align-items:center;gap:4px">
+                  <span class="pct-sym">€</span>
+                  <input class="pct-input" id="eur-imprevistos" type="number" value="100" oninput="actualizarPreview()">
+                </div>
+              </div>
+              <div class="pct-item">
+                <span class="pct-label">ETF Global</span>
+                <div style="display:flex;align-items:center;gap:4px">
+                  <span class="pct-sym">€</span>
+                  <input class="pct-input" id="eur-etf" type="number" value="100" oninput="actualizarPreview()">
+                </div>
+              </div>
+            </div>
+            <div id="pct-warning" style="color:var(--danger);font-size:13px;margin-top:8px;display:none">Los importes deben sumar el dinero libre</div>
+            <div id="distribucion-preview" style="margin-top:16px"></div>
+            <button class="btn-primary" id="btn-registrar" style="margin-top:16px;width:100%;opacity:0.5" disabled onclick="registrarSueldo()">Registrar sueldo</button>
           </div>
-        </div>
-        <div id="pct-warning" style="color:var(--danger);font-size:13px;margin-top:8px;display:none">Los importes deben sumar el dinero libre</div>
-        <div id="distribucion-preview" style="margin-top:16px"></div>
-        <button class="btn-primary" id="btn-registrar" style="margin-top:16px;width:100%;opacity:0.5" disabled onclick="registrarSueldo()">Registrar sueldo</button>
-      </div>
-      <div class="section-title">Historial</div>
-      <div id="historial-sueldos"></div>`;
+          <div class="section-title">Historial</div>
+          <div id="historial-sueldos"></div>`;
+      }
+      cargarHistorialSueldos();
+    } catch (error) {
+      console.error("Error cargando la pestaña de sueldos:", error);
+    }
   }
 
-  cargarHistorialSueldos();
-}
+  // Actualizar Preview del Sueldo Libre y Distribución
+  function actualizarPreview() {
+    const sueldo = parseFloat(document.getElementById("inp-sueldo")?.value) || 0;
+    const libre = sueldo - totalDescuentosGlobal;
 
-function actualizarPreview() {
-  const sueldo = parseFloat(document.getElementById("inp-sueldo")?.value) || 0;
-  const libre = sueldo - totalDescuentosGlobal;
+    const previewLibre = document.getElementById("preview-libre");
+    if (previewLibre) previewLibre.textContent = libre > 0 ? `${libre.toFixed(2)} €` : "— €";
 
-  const previewLibre = document.getElementById("preview-libre");
-  if (previewLibre) previewLibre.textContent = libre > 0 ? `${libre.toFixed(0)} €` : "— €";
+    const colchon = parseFloat(document.getElementById("eur-colchon")?.value) || 0;
+    const certificaciones = parseFloat(document.getElementById("eur-certificaciones")?.value) || 0;
+    const imprevistos = parseFloat(document.getElementById("eur-imprevistos")?.value) || 0;
+    const etf = parseFloat(document.getElementById("eur-etf")?.value) || 0;
+    const suma = colchon + certificaciones + imprevistos + etf;
 
-  const colchon = parseFloat(document.getElementById("eur-colchon")?.value) || 0;
-  const certificaciones = parseFloat(document.getElementById("eur-certificaciones")?.value) || 0;
-  const imprevistos = parseFloat(document.getElementById("eur-imprevistos")?.value) || 0;
-  const etf = parseFloat(document.getElementById("eur-etf")?.value) || 0;
-  const suma = colchon + certificaciones + imprevistos + etf;
+    const warning = document.getElementById("pct-warning");
+    const btn = document.getElementById("btn-registrar");
+    const preview = document.getElementById("distribucion-preview");
 
-  const warning = document.getElementById("pct-warning");
-  const btn = document.getElementById("btn-registrar");
-  const preview = document.getElementById("distribucion-preview");
+    if (!warning || !btn || !preview) return;
 
-  if (Math.round(suma * 100) !== Math.round(libre * 100)) {
-    warning.style.display = "block";
-    warning.textContent = `Los importes suman ${suma.toFixed(2)} € pero el dinero libre es ${libre.toFixed(2)} €`;
-    btn.disabled = true;
-    btn.style.opacity = "0.5";
-    preview.innerHTML = "";
-    return;
-  }
-
-  warning.style.display = "none";
-  btn.disabled = false;
-  btn.style.opacity = "1";
-
-  if (libre > 0) {
-    preview.innerHTML = `
-      <div class="section-title">Distribución</div>
-      <div class="list-item" style="margin-bottom:6px">
-        <div class="list-item-name">Colchón / Ahorro</div>
-        <div class="list-item-amount">${colchon.toFixed(2)} €</div>
-      </div>
-      <div class="list-item" style="margin-bottom:6px">
-        <div class="list-item-name">Certificaciones</div>
-        <div class="list-item-amount">${certificaciones.toFixed(2)} €</div>
-      </div>
-      <div class="list-item" style="margin-bottom:6px">
-        <div class="list-item-name">Imprevistos</div>
-        <div class="list-item-amount">${imprevistos.toFixed(2)} €</div>
-      </div>
-      <div class="list-item">
-        <div class="list-item-name">ETF Global</div>
-        <div class="list-item-amount">${etf.toFixed(2)} €</div>
-      </div>`;
-  }
-}
-
-async function registrarSueldo() {
-  const sueldo = parseFloat(document.getElementById("inp-sueldo").value);
-  const libre = sueldo - totalDescuentosGlobal;
-  const aportaciones = {
-    colchon: parseFloat(document.getElementById("eur-colchon").value),
-    certificaciones: parseFloat(document.getElementById("eur-certificaciones").value),
-    imprevistos: parseFloat(document.getElementById("eur-imprevistos").value),
-    etf: parseFloat(document.getElementById("eur-etf").value),
-  };
-
-  await fetch("/api/finanzas/sueldo", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sueldo_neto: sueldo, porcentajes: aportaciones, disponible_real: libre })
-  });
-
-  const etfMonto = aportaciones.etf;
-  const colchonMonto = aportaciones.colchon;
-
-  if (etfMonto > 0) {
-    await fetch("/api/finanzas/etf", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ aportacion: etfMonto })
-    });
-  }
-
-  if (colchonMonto > 0) {
-  const colchonCheck = await fetch("/api/finanzas/colchon");
-  if (!colchonCheck.ok) {
-    const gastosFijosRes = await fetch("/api/finanzas/gastos-fijos");
-    const gastosFijos = await gastosFijosRes.json();
-    const totalFijos = gastosFijos.reduce((acc, g) => acc + g.monto, 0);
-    const gastosPersonalesRes = await fetch("/api/finanzas/gastos-personales");
-    const gastosPersonales = await gastosPersonalesRes.json();
-    const totalPersonales = gastosPersonales.reduce((acc, g) => acc + g.monto_estimado, 0);
-    await fetch("/api/finanzas/colchon/inicializar", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ gastos_esenciales_mes: totalFijos + totalPersonales })
-    });
-  }
-  await fetch("/api/finanzas/colchon/actualizar", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ monto: colchonMonto })
-  });
-}
-
-  await fetch("/api/usuario/xp", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ stat_tipo: "Riqueza", xp: 30, motivo: "Sueldo registrado" })
-  });
-
-  cargarTabSueldo();
-}
-
-async function cargarHistorialSueldos() {
-  const res = await fetch("/api/finanzas/sueldo");
-  const sueldos = await res.json();
-  const el = document.getElementById("historial-sueldos");
-  if (!el) return;
-  el.innerHTML = sueldos.map(s => `
-    <div class="list-item">
-      <div>
-        <div class="list-item-name">${s.fecha}</div>
-        <div style="font-size:12px;color:var(--text-dim)">Libre: ${s.disponible_real.toFixed(0)} €</div>
-      </div>
-      <div class="list-item-amount">${s.sueldo_neto.toFixed(0)} €</div>
-    </div>`).join("") || '<div style="color:var(--text-dim);font-size:14px">Sin registros</div>';
-}
-
-  async function cargarResumen() {
-    const [colchon, etf, sueldos] = await Promise.all([
-      fetch("/api/finanzas/colchon").then(r => r.ok ? r.json() : null),
-      fetch("/api/finanzas/etf").then(r => r.json()),
-      fetch("/api/finanzas/sueldo").then(r => r.json())
-    ]);
-
-    // Cards
-    const cards = document.getElementById("cards-resumen");
-    const ultimoSueldo = sueldos[0];
-    cards.innerHTML = `
-      <div class="card">
-        <div class="card-label">Último sueldo neto</div>
-        <div class="card-value blue">${ultimoSueldo ? ultimoSueldo.sueldo_neto.toFixed(0) + " €" : "—"}</div>
-      </div>
-      <div class="card">
-        <div class="card-label">Disponible real</div>
-        <div class="card-value green">${ultimoSueldo ? ultimoSueldo.disponible_real.toFixed(0) + " €" : "—"}</div>
-      </div>
-      <div class="card">
-        <div class="card-label">ETF acumulado</div>
-        <div class="card-value gold">${etf.length > 0 ? etf[0].total_acumulado.toFixed(0) + " €" : "0 €"}</div>
-      </div>`;
-
-    // Colchón
-    if (colchon) {
-      const pct = Math.min((colchon.acumulado / colchon.meta_monto) * 100, 100).toFixed(1);
-      document.getElementById("colchon-estado").textContent = colchon.completado ? "✓ Colchón completado" : "Colchón en progreso";
-      document.getElementById("colchon-pct").textContent = pct + "%";
-      document.getElementById("colchon-acumulado").textContent = colchon.acumulado.toFixed(0) + " €";
-      document.getElementById("colchon-meta").textContent = colchon.meta_monto.toFixed(0) + " €";
-      setTimeout(() => {
-        document.getElementById("colchon-bar").style.width = pct + "%";
-      }, 100);
+    if (sueldo > 0 && Math.round(suma * 100) !== Math.round(libre * 100)) {
+      warning.style.display = "block";
+      warning.textContent = `Los importes suman ${suma.toFixed(2)} € pero el dinero libre es ${libre.toFixed(2)} €`;
+      btn.disabled = true;
+      btn.style.opacity = "0.5";
+      preview.innerHTML = "";
+      return;
     }
 
-    // ETF
-    const etfEl = document.getElementById("etf-resumen");
-    if (etf.length === 0) {
-      etfEl.innerHTML = '<div style="color:var(--text-dim);font-size:14px">Sin aportaciones registradas</div>';
+    warning.style.display = "none";
+    if (sueldo > 0 && libre >= 0) {
+      btn.disabled = false;
+      btn.style.opacity = "1";
+      preview.innerHTML = `
+        <div class="section-title">Distribución confirmada</div>
+        <div class="list-item" style="margin-bottom:6px"><div class="list-item-name">Colchón / Ahorro</div><div class="list-item-amount">${colchon.toFixed(2)} €</div></div>
+        <div class="list-item" style="margin-bottom:6px"><div class="list-item-name">Certificaciones</div><div class="list-item-amount">${certificaciones.toFixed(2)} €</div></div>
+        <div class="list-item" style="margin-bottom:6px"><div class="list-item-name">Imprevistos</div><div class="list-item-amount">${imprevistos.toFixed(2)} €</div></div>
+        <div class="list-item" style="margin-bottom:6px"><div class="list-item-name">ETF Global</div><div class="list-item-amount">${etf.toFixed(2)} €</div></div>
+      `;
     } else {
-      etfEl.innerHTML = etf.slice(0,3).map(e => `
-        <div class="list-item">
-          <div class="list-item-name">${e.fecha}</div>
-          <div class="list-item-right">
-            <div style="color:var(--text-dim);font-size:13px">+${e.aportacion_mensual} €</div>
-            <div class="list-item-amount">${e.total_acumulado.toFixed(0)} € total</div>
-          </div>
-        </div>`).join("");
+      btn.disabled = true;
+      btn.style.opacity = "0.5";
+      preview.innerHTML = "";
     }
   }
 
+  // Enviar sueldo al backend
+  async function registrarSueldo() {
+    const sueldo_neto = parseFloat(document.getElementById("inp-sueldo").value);
+    const porcentajes = {
+      "Colchón / Ahorro": parseFloat(document.getElementById("eur-colchon").value),
+      "Certificaciones": parseFloat(document.getElementById("eur-certificaciones").value),
+      "Imprevistos": parseFloat(document.getElementById("eur-imprevistos").value),
+      "ETF Global": parseFloat(document.getElementById("eur-etf").value)
+    };
 
+    const res = await fetch("/api/finanzas/sueldo", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sueldo_neto, porcentajes })
+    });
 
+    if (res.ok) {
+      cargarTabSueldo();
+    } else {
+      alert("Error al registrar el sueldo");
+    }
+  }
+
+  // Cargar Historial
+  async function cargarHistorialSueldos() {
+    const div = document.getElementById("historial-sueldos");
+    if (!div) return;
+    const historial = await fetch("/api/finanzas/sueldo").then(r => r.json());
+    div.innerHTML = historial.map(h => `
+      <div class="list-item">
+        <div><strong>${h.fecha}</strong> - Sueldo: ${h.sueldo_neto}€</div>
+        <div class="list-item-amount" style="font-size:14px; color:var(--text-dim)">Libre: ${h.disponible_real}€</div>
+      </div>
+    `).join("");
+  }
+
+  // GESTIÓN DE GASTOS
   async function cargarGastos() {
-    const [fijos, personales, cats] = await Promise.all([
+    const [fijos, personales] = await Promise.all([
       fetch("/api/finanzas/gastos-fijos").then(r => r.json()),
-      fetch("/api/finanzas/gastos-personales").then(r => r.json()),
-      fetch("/api/finanzas/gastos-personales/categorias").then(r => r.json())
+      fetch("/api/finanzas/gastos-personales").then(r => r.json())
     ]);
 
+    // Render Fijos
     document.getElementById("gastos-fijos-list").innerHTML = fijos.map(g => `
       <div class="list-item">
-        <div class="list-item-name">${g.concepto}</div>
+        <span class="list-item-name">${g.concepto}</span>
         <div class="list-item-right">
-          <div class="list-item-amount">${g.monto} €/mes</div>
-          <button class="btn-del" onclick="delGastoFijo(${g.id})">×</button>
+          <span class="list-item-amount">${g.monto} €</span>
+          <button class="btn-del" onclick="eliminarGastoFijo(${g.id})">×</button>
         </div>
-      </div>`).join("") || '<div style="color:var(--text-dim);font-size:14px;margin-bottom:8px">Sin gastos fijos</div>';
+      </div>`).join("");
 
+    // Render Personales
     document.getElementById("gastos-personales-list").innerHTML = personales.map(g => `
       <div class="list-item">
-        <div class="list-item-name">${g.nombre}</div>
+        <span class="list-item-name">${g.nombre}</span>
         <div class="list-item-right">
-          <div class="list-item-amount">${g.monto_estimado} €/mes</div>
-          <button class="btn-del" onclick="delGastoPersonal(${g.id})">×</button>
+          <span class="list-item-amount">${g.monto_estimado} €</span>
+          <button class="btn-del" onclick="eliminarGastoPersonal(${g.id})">×</button>
         </div>
-      </div>`).join("") || '<div style="color:var(--text-dim);font-size:14px;margin-bottom:8px">Sin gastos personales</div>';
-
-    const sel = document.getElementById("sel-cat-personal");
-    sel.innerHTML = cats.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
+      </div>`).join("");
   }
 
   async function addGastoFijo() {
-    const concepto = document.getElementById("inp-fijo-concepto").value.trim();
+    const concepto = document.getElementById("inp-fijo-concepto").value;
     const monto = parseFloat(document.getElementById("inp-fijo-monto").value);
-    if (!concepto || !monto) return;
+    if(!concepto || !monto) return alert("Rellena todos los campos");
+
     await fetch("/api/finanzas/gastos-fijos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ concepto, monto })
     });
-    document.getElementById("inp-fijo-concepto").value = "";
-    document.getElementById("inp-fijo-monto").value = "";
-    cargarGastos();
-  }
-
-  async function delGastoFijo(id) {
-    await fetch(`/api/finanzas/gastos-fijos/${id}`, { method: "DELETE" });
     cargarGastos();
   }
 
   async function addGastoPersonal() {
-    const cat_id = parseInt(document.getElementById("sel-cat-personal").value);
-    const monto = parseFloat(document.getElementById("inp-personal-monto").value);
-    if (!monto) return;
+    const nombre = document.getElementById("inp-personal-nombre").value;
+    const monto_estimado = parseFloat(document.getElementById("inp-personal-monto").value);
+    if(!nombre || !monto_estimado) return alert("Rellena todos los campos");
+
     await fetch("/api/finanzas/gastos-personales", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ categoria_id: cat_id, monto_estimado: monto })
+      body: JSON.stringify({ nombre, monto_estimado })
     });
-    document.getElementById("inp-personal-monto").value = "";
     cargarGastos();
   }
 
-  async function delGastoPersonal(id) {
+  async function eliminarGastoFijo(id) {
+    await fetch(`/api/finanzas/gastos-fijos/${id}`, { method: "DELETE" });
+    cargarGastos();
+  }
+
+  async function eliminarGastoPersonal(id) {
     await fetch(`/api/finanzas/gastos-personales/${id}`, { method: "DELETE" });
     cargarGastos();
   }
 
-
-
-  cargarResumen();
-</script>
-<script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/static/sw.js");
+  // Funciones Dummy para el Resumen (ajústalas según tu API del dashboard)
+  async function cargarResumen() {
+    console.log("Cargando resumen...");
   }
+
+  // Inicialización por defecto
+  window.onload = () => {
+    showTab('resumen');
+  };
 </script>
 </body>
 </html>
