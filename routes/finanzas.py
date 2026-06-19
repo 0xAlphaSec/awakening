@@ -8,7 +8,7 @@ finanzas_bp = Blueprint("finanzas", __name__, url_prefix="/api/finanzas")
 @finanzas_bp.route("/gastos-fijos", methods=["GET"])
 def get_gastos_fijos():
     gastos = Finanzas.obtener_gastos_fijos()
-    return jsonify([dict(g) for g in gastos])
+    return jsonify(gastos)
 
 @finanzas_bp.route("/gastos-fijos", methods=["POST"])
 def add_gasto_fijo():
@@ -36,7 +36,7 @@ def registrar_sueldo():
 @finanzas_bp.route("/sueldo", methods=["GET"])
 def get_historial_sueldos():
     historial = Finanzas.obtener_historial_sueldos()
-    return jsonify([dict(h) for h in historial])
+    return jsonify(historial)
 
 # ── COLCHÓN ───────────────────────────────────────────────
 
@@ -109,7 +109,7 @@ def registrar_etf():
 @finanzas_bp.route("/gastos-personales", methods=["GET"])
 def get_gastos_personales():
     gastos = Finanzas.obtener_gastos_personales()
-    return jsonify([dict(g) for g in gastos])
+    return jsonify(gastos)
 
 @finanzas_bp.route("/gastos-personales", methods=["POST"])
 def add_gasto_personal():
