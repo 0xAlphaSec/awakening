@@ -225,7 +225,15 @@
       totalDescuentosGlobal = totalFijos + totalPersonales;
 
       if (registroMes) {
-        const porcentajes = JSON.parse(registroMes.porcentajes);
+        // FIX: 'porcentajes' puede llegar ya como objeto (si el driver de la
+        // base de datos deserializa el JSON automáticamente) o como string
+        // (si se guarda/lee como TEXT). JSON.parse() sobre un objeto ya
+        // parseado lanza un error y rompe todo el try/catch, dejando la
+        // pestaña en blanco sin avisar. Comprobamos el tipo antes de parsear.
+        const porcentajes = typeof registroMes.porcentajes === "string"
+          ? JSON.parse(registroMes.porcentajes)
+          : registroMes.porcentajes;
+
         const libre = registroMes.disponible_real;
         const proximoMes = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
           .toLocaleDateString("es-ES", { day: "numeric", month: "long" });
@@ -321,10 +329,16 @@
           </div>
           <div class="section-title">Historial</div>
           <div id="historial-sueldos"></div>`;
+        // Inicializamos el preview con los valores por defecto de los inputs
+        actualizarPreview();
       }
       cargarHistorialSueldos();
     } catch (error) {
       console.error("Error cargando la pestaña de sueldos:", error);
+      container.innerHTML = `
+        <div class="form-panel" style="color:var(--danger)">
+          No se pudo cargar la pestaña de Sueldo. Revisa la consola del navegador (F12) para más detalles.
+        </div>`;
     }
   }
 
@@ -385,16 +399,23 @@
       "ETF Global": parseFloat(document.getElementById("eur-etf").value)
     };
 
-    const res = await fetch("/api/finanzas/sueldo", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sueldo_neto, porcentajes })
-    });
+    try {
+      const res = await fetch("/api/finanzas/sueldo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sueldo_neto, porcentajes })
+      });
 
-    if (res.ok) {
-      cargarTabSueldo();
-    } else {
-      alert("Error al registrar el sueldo");
+      if (res.ok) {
+        cargarTabSueldo();
+      } else {
+        const err = await res.text();
+        console.error("Error al registrar el sueldo:", err);
+        alert("Error al registrar el sueldo. Revisa la consola (F12) para más detalles.");
+      }
+    } catch (error) {
+      console.error("Error de red al registrar el sueldo:", error);
+      alert("No se pudo conectar con el servidor.");
     }
   }
 
@@ -402,41 +423,50 @@
   async function cargarHistorialSueldos() {
     const div = document.getElementById("historial-sueldos");
     if (!div) return;
-    const historial = await fetch("/api/finanzas/sueldo").then(r => r.json());
-    div.innerHTML = historial.map(h => `
-      <div class="list-item">
-        <div><strong>${h.fecha}</strong> - Sueldo: ${h.sueldo_neto}€</div>
-        <div class="list-item-amount" style="font-size:14px; color:var(--text-dim)">Libre: ${h.disponible_real}€</div>
-      </div>
-    `).join("");
+    try {
+      const historial = await fetch("/api/finanzas/sueldo").then(r => r.json());
+      div.innerHTML = historial.map(h => `
+        <div class="list-item">
+          <div><strong>${h.fecha}</strong> - Sueldo: ${h.sueldo_neto}€</div>
+          <div class="list-item-amount" style="font-size:14px; color:var(--text-dim)">Libre: ${h.disponible_real}€</div>
+        </div>
+      `).join("");
+    } catch (error) {
+      console.error("Error cargando historial de sueldos:", error);
+      div.innerHTML = `<div style="color:var(--danger)">No se pudo cargar el historial.</div>`;
+    }
   }
 
   // GESTIÓN DE GASTOS
   async function cargarGastos() {
-    const [fijos, personales] = await Promise.all([
-      fetch("/api/finanzas/gastos-fijos").then(r => r.json()),
-      fetch("/api/finanzas/gastos-personales").then(r => r.json())
-    ]);
+    try {
+      const [fijos, personales] = await Promise.all([
+        fetch("/api/finanzas/gastos-fijos").then(r => r.json()),
+        fetch("/api/finanzas/gastos-personales").then(r => r.json())
+      ]);
 
-    // Render Fijos
-    document.getElementById("gastos-fijos-list").innerHTML = fijos.map(g => `
-      <div class="list-item">
-        <span class="list-item-name">${g.concepto}</span>
-        <div class="list-item-right">
-          <span class="list-item-amount">${g.monto} €</span>
-          <button class="btn-del" onclick="eliminarGastoFijo(${g.id})">×</button>
-        </div>
-      </div>`).join("");
+      // Render Fijos
+      document.getElementById("gastos-fijos-list").innerHTML = fijos.map(g => `
+        <div class="list-item">
+          <span class="list-item-name">${g.concepto}</span>
+          <div class="list-item-right">
+            <span class="list-item-amount">${g.monto} €</span>
+            <button class="btn-del" onclick="eliminarGastoFijo(${g.id})">×</button>
+          </div>
+        </div>`).join("");
 
-    // Render Personales
-    document.getElementById("gastos-personales-list").innerHTML = personales.map(g => `
-      <div class="list-item">
-        <span class="list-item-name">${g.nombre}</span>
-        <div class="list-item-right">
-          <span class="list-item-amount">${g.monto_estimado} €</span>
-          <button class="btn-del" onclick="eliminarGastoPersonal(${g.id})">×</button>
-        </div>
-      </div>`).join("");
+      // Render Personales
+      document.getElementById("gastos-personales-list").innerHTML = personales.map(g => `
+        <div class="list-item">
+          <span class="list-item-name">${g.nombre}</span>
+          <div class="list-item-right">
+            <span class="list-item-amount">${g.monto_estimado} €</span>
+            <button class="btn-del" onclick="eliminarGastoPersonal(${g.id})">×</button>
+          </div>
+        </div>`).join("");
+    } catch (error) {
+      console.error("Error cargando gastos:", error);
+    }
   }
 
   async function addGastoFijo() {
@@ -444,12 +474,25 @@
     const monto = parseFloat(document.getElementById("inp-fijo-monto").value);
     if(!concepto || !monto) return alert("Rellena todos los campos");
 
-    await fetch("/api/finanzas/gastos-fijos", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ concepto, monto })
-    });
-    cargarGastos();
+    try {
+      const res = await fetch("/api/finanzas/gastos-fijos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ concepto, monto })
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        console.error("Error al añadir gasto fijo:", err);
+        alert("No se pudo añadir el gasto fijo. Revisa la consola (F12) para más detalles.");
+        return;
+      }
+      document.getElementById("inp-fijo-concepto").value = "";
+      document.getElementById("inp-fijo-monto").value = "";
+      cargarGastos();
+    } catch (error) {
+      console.error("Error de red al añadir gasto fijo:", error);
+      alert("No se pudo conectar con el servidor.");
+    }
   }
 
   async function addGastoPersonal() {
@@ -457,22 +500,45 @@
     const monto_estimado = parseFloat(document.getElementById("inp-personal-monto").value);
     if(!nombre || !monto_estimado) return alert("Rellena todos los campos");
 
-    await fetch("/api/finanzas/gastos-personales", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nombre, monto_estimado })
-    });
-    cargarGastos();
+    try {
+      const res = await fetch("/api/finanzas/gastos-personales", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre, monto_estimado })
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        console.error("Error al añadir gasto personal:", err);
+        alert("No se pudo añadir el gasto personal. Revisa la consola (F12) para más detalles.");
+        return;
+      }
+      document.getElementById("inp-personal-nombre").value = "";
+      document.getElementById("inp-personal-monto").value = "";
+      cargarGastos();
+    } catch (error) {
+      console.error("Error de red al añadir gasto personal:", error);
+      alert("No se pudo conectar con el servidor.");
+    }
   }
 
   async function eliminarGastoFijo(id) {
-    await fetch(`/api/finanzas/gastos-fijos/${id}`, { method: "DELETE" });
-    cargarGastos();
+    try {
+      const res = await fetch(`/api/finanzas/gastos-fijos/${id}`, { method: "DELETE" });
+      if (!res.ok) console.error("Error al eliminar gasto fijo:", await res.text());
+      cargarGastos();
+    } catch (error) {
+      console.error("Error de red al eliminar gasto fijo:", error);
+    }
   }
 
   async function eliminarGastoPersonal(id) {
-    await fetch(`/api/finanzas/gastos-personales/${id}`, { method: "DELETE" });
-    cargarGastos();
+    try {
+      const res = await fetch(`/api/finanzas/gastos-personales/${id}`, { method: "DELETE" });
+      if (!res.ok) console.error("Error al eliminar gasto personal:", await res.text());
+      cargarGastos();
+    } catch (error) {
+      console.error("Error de red al eliminar gasto personal:", error);
+    }
   }
 
   // Funciones Dummy para el Resumen (ajústalas según tu API del dashboard)
