@@ -81,11 +81,26 @@ def iniciar_sesion():
 @ejercicios_bp.route("/catalogo", methods=["POST"])
 def add_ejercicio():
     data = request.get_json()
+    nombre = data["nombre"].strip()
     conn = get_connection()
     cur = get_cursor(conn)
+
+    # Evita duplicados (mismo nombre, sin distinguir mayusculas/minusculas
+    # ni espacios). Si ya existe, devolvemos el existente en vez de crear
+    # uno nuevo: protege ante doble-clic o reintentos del frontend.
+    cur.execute(
+        "SELECT id FROM ejercicios_cat WHERE LOWER(TRIM(nombre)) = LOWER(%s)",
+        (nombre,)
+    )
+    existente = cur.fetchone()
+    if existente:
+        cur.close()
+        conn.close()
+        return jsonify({"mensaje": "Ya existe un ejercicio con ese nombre.", "id": existente["id"]}), 200
+
     cur.execute(
         "INSERT INTO ejercicios_cat (nombre, grupo_muscular, equipo_default, tipo) VALUES (%s, %s, %s, %s) RETURNING id",
-        (data["nombre"], data.get("grupo_muscular"), data.get("equipo_default"), data.get("tipo", "repeticiones"))
+        (nombre, data.get("grupo_muscular"), data.get("equipo_default"), data.get("tipo", "repeticiones"))
     )
     ejercicio_id = cur.fetchone()["id"]
     conn.commit()
