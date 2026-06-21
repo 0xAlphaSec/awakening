@@ -6,6 +6,11 @@ castigos_bp = Blueprint("castigos", __name__, url_prefix="/api/castigos")
 
 @castigos_bp.route("/pendientes/<int:usuario_id>", methods=["GET"])
 def get_castigos_pendientes(usuario_id):
+    # Antes de devolver los pendientes, comprobamos si ya toca revisar el
+    # día anterior. Si hay hábitos fallados y aún no se revisó hoy, se
+    # asignan automáticamente aquí. Es idempotente: si ya se revisó hoy,
+    # no hace nada.
+    Castigo.verificar_y_asignar_si_corresponde(usuario_id)
     castigos = Castigo.obtener_castigos_pendientes(usuario_id)
     return jsonify([dict(c) for c in castigos])
 
