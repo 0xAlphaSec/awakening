@@ -253,44 +253,45 @@ def init_db():
         )
     """)
 
-   # ── GASTOS PERSONALES ─────────────────────────────────
-    # NOTA: la tabla se creó originalmente con categoria_id (FK a una lista
-    # predefinida). El modelo/rutas/HTML actuales ya usan un esquema libre
-    # (nombre + monto, igual que gastos_fijos), así que migramos la tabla
-    # si todavía tiene la columna vieja.
+    # ── GASTOS PERSONALES ─────────────────────────────────
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS gastos_personales (
+        CREATE TABLE IF NOT EXISTS gastos_personales_cat (
             id SERIAL PRIMARY KEY,
             nombre TEXT NOT NULL,
-            monto_estimado REAL NOT NULL,
-            activo INTEGER DEFAULT 1
+            es_predefinida INTEGER DEFAULT 1
         )
     """)
 
-    # Si la tabla ya existía con el esquema viejo (categoria_id NOT NULL,
-    # sin columna nombre), la adaptamos sin perder datos:
     cur.execute("""
-        SELECT column_name FROM information_schema.columns
-        WHERE table_name = 'gastos_personales'
+        CREATE TABLE IF NOT EXISTS gastos_personales (
+            id SERIAL PRIMARY KEY,
+            categoria_id INTEGER NOT NULL,
+            monto_estimado REAL NOT NULL,
+            activo INTEGER DEFAULT 1,
+            FOREIGN KEY (categoria_id) REFERENCES gastos_personales_cat(id)
+        )
     """)
-    columnas = {row["column_name"] for row in cur.fetchall()}
 
-    if "nombre" not in columnas:
-        cur.execute("ALTER TABLE gastos_personales ADD COLUMN nombre TEXT")
-        # Rellenamos el nombre a partir de la categoría antigua, si existe
-        if "categoria_id" in columnas:
-            cur.execute("""
-                UPDATE gastos_personales gp
-                SET nombre = cat.nombre
-                FROM gastos_personales_cat cat
-                WHERE gp.categoria_id = cat.id AND gp.nombre IS NULL
-            """)
-        cur.execute("UPDATE gastos_personales SET nombre = 'Sin nombre' WHERE nombre IS NULL")
-        cur.execute("ALTER TABLE gastos_personales ALTER COLUMN nombre SET NOT NULL")
+    conn.commit()
 
-    if "categoria_id" in columnas:
-        cur.execute("ALTER TABLE gastos_personales ALTER COLUMN categoria_id DROP NOT NULL")
+    # Categorías predefinidas de gastos personales
+    cur.execute("SELECT COUNT(*) FROM gastos_personales_cat")
+    cats = cur.fetchone()["count"]
+    if cats == 0:
+        predefinidas = [
+            ("Gimnasio",), ("Transporte",), ("Alimentacion saludable",),
+            ("Ropa",), ("Formacion / Cursos",), ("Higiene personal",),
+            ("Ocio",), ("Suplementos",)
+        ]
+        cur.executemany(
+            "INSERT INTO gastos_personales_cat (nombre) VALUES (%s)",
+            predefinidas
+        )
+        conn.commit()
 
+    # ── MIGRACIONES (columnas añadidas en versiones posteriores) ──
+    cur.execute("ALTER TABLE castigos_activos ADD COLUMN IF NOT EXISTS descripcion TEXT")
+    cur.execute("ALTER TABLE usuario ADD COLUMN IF NOT EXISTS ultima_revision_castigos TEXT")
     conn.commit()
 
     cur.close()
