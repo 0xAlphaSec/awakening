@@ -66,9 +66,9 @@ class Castigo:
             descripcion = Castigo.obtener_castigo_por_nivel(nivel_usuario)
             cur.execute(
                 """INSERT INTO castigos_activos
-                   (usuario_id, castigo_id, fecha_asignado)
-                   VALUES (%s, %s, %s) RETURNING id""",
-                (usuario_id, fallo["id"], date.today().isoformat())
+                   (usuario_id, castigo_id, descripcion, fecha_asignado)
+                   VALUES (%s, %s, %s, %s) RETURNING id""",
+                (usuario_id, fallo["id"], descripcion, date.today().isoformat())
             )
             castigo_id = cur.fetchone()["id"]
             castigos_asignados.append({
@@ -80,6 +80,53 @@ class Castigo:
         conn.commit()
         cur.close()
         conn.close()
+        return castigos_asignados
+
+    @staticmethod
+    def verificar_y_asignar_si_corresponde(usuario_id):
+        """
+        Comprueba si ya se revisó el día de hoy para este usuario. Si no,
+        detecta los hábitos fallados ayer, asigna los castigos correspondientes
+        y marca hoy como revisado, para no volver a asignarlos si se llama
+        varias veces el mismo día (p.ej. cada vez que se abre la pantalla).
+        """
+        from models.habitos import Habito
+        from models.usuario import Usuario
+
+        conn = get_connection()
+        cur = get_cursor(conn)
+        cur.execute(
+            "SELECT ultima_revision_castigos, nivel_general FROM usuario WHERE id = %s",
+            (usuario_id,)
+        )
+        fila = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        if not fila:
+            return []
+
+        hoy = date.today().isoformat()
+        if fila["ultima_revision_castigos"] == hoy:
+            return []  # ya revisado hoy, no hacer nada
+
+        fallos = Habito.obtener_fallos_ayer()
+        castigos_asignados = []
+        if fallos:
+            castigos_asignados = Castigo.asignar_castigos(
+                usuario_id, fallos, fila["nivel_general"] or 1
+            )
+
+        conn = get_connection()
+        cur = get_cursor(conn)
+        cur.execute(
+            "UPDATE usuario SET ultima_revision_castigos = %s WHERE id = %s",
+            (hoy, usuario_id)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
         return castigos_asignados
 
     @staticmethod
